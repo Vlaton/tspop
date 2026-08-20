@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Туда-Сюда — Попутчики</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f2f3f5;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .vk-bg { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); }
+        .vk-text { color: #6366f1; }
+        .active-tab { color: #6366f1; border-top: 2px solid #6366f1; }
+        .inactive-tab { color: #818c99; }
+        
+        /* Modal Drawer Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.55);
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+        .modal-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-sheet {
+            background: #ffffff;
+            width: 100%;
+            max-width: 28rem;
+            margin: 0 auto;
+            border-top-left-radius: 1.5rem;
+            border-top-right-radius: 1.5rem;
+            padding: 1.25rem;
+            transform: translateY(100%);
+            transition: transform 0.25s ease-out;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.15);
+        }
+        .modal-overlay.open .modal-sheet {
+            transform: translateY(0);
+        }
+        
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body class="flex justify-center min-h-screen bg-slate-200">
+
+    <div class="w-full max-w-md bg-white min-h-screen flex flex-col justify-between shadow-xl relative pb-20">
+        
+        <!-- Header Bar -->
+        <header class="vk-bg text-white p-3.5 sticky top-0 z-20 shadow-md flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-arrows-left-right text-lg"></i>
+                <h1 class="text-lg font-bold tracking-wide">Туда-Сюда</h1>
+            </div>
+            
+            <!-- Auth Status Button / Profile Cabinet -->
+            <button id="btn-header-profile" onclick="handleHeaderProfileClick()" class="flex items-center gap-2 bg-white/15 hover:bg-white/25 active:scale-95 transition pl-2 pr-2.5 py-1 rounded-full">
+                <img id="header-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" class="w-6 h-6 rounded-full object-cover border border-white/40">
+                <span id="header-name" class="text-xs font-medium max-w-[80px] truncate">Войти</span>
+                <i id="header-icon" class="fa-solid fa-right-to-bracket text-[10px] opacity-80"></i>
+            </button>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 p-4 overflow-y-auto">
+
+            <!-- TAB 1: SEARCH RIDES -->
+            <section id="tab-search" class="space-y-4">
+                
+                <!-- Search Form -->
+                <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                    <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Поиск маршрута</h2>
+                    
+                    <div class="space-y-2">
+                        <div class="relative">
+                            <i class="fa-solid fa-circle-dot text-indigo-500 absolute left-3 top-3 text-xs"></i>
+                            <input type="text" id="search-from" placeholder="Откуда (напр. Москва)" class="w-full pl-8 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500 transition">
+                        </div>
+                        <div class="relative">
+                            <i class="fa-solid fa-location-dot text-rose-500 absolute left-3 top-3 text-xs"></i>
+                            <input type="text" id="search-to" placeholder="Куда (напр. Владимир)" class="w-full pl-8 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500 transition">
+                        </div>
+                        <div class="relative">
+                            <i class="fa-regular fa-calendar absolute left-3 top-3 text-slate-400 text-xs"></i>
+                            <input type="date" id="search-date" class="w-full pl-8 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500 transition text-slate-700">
+                        </div>
+                    </div>
+
+                    <button onclick="filterRides()" class="w-full vk-bg text-white py-2.5 rounded-xl font-medium text-xs hover:opacity-95 transition shadow-md flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-magnifying-glass"></i> Найти поездки
+                    </button>
+                </div>
+
+                <!-- Filter Status -->
+                <div id="filter-info" class="hidden flex justify-between items-center bg-indigo-50 text-indigo-900 text-xs px-3 py-2 rounded-lg border border-indigo-100">
+                    <span id="filter-text">Показаны найденные маршруты</span>
+                    <button onclick="resetFilter()" class="font-bold underline text-indigo-600">Сбросить</button>
+                </div>
+
+                <!-- Feed Header -->
+                <div class="flex justify-between items-center pt-1">
+                    <h3 class="font-bold text-slate-800 text-sm">Доступные поездки</h3>
+                    <span id="rides-count" class="text-xs text-slate-500 font-medium">Всего: 0</span>
+                </div>
+
+                <!-- Compact Rides Container -->
+                <div id="rides-container" class="space-y-2.5">
+                    <!-- Populated by JS -->
+                </div>
+
+            </section>
+
+            <!-- TAB 2: PUBLISH RIDE -->
+            <section id="tab-publish" class="space-y-4 hidden">
+                <div class="bg-white p-1 space-y-4">
+                    <h2 class="text-base font-bold text-slate-800">Опубликовать поездку</h2>
+                    <p class="text-xs text-slate-500">Укажите маршрут с остановками. Пассажиры по пути смогут увидеть ваше предложение.</p>
+
+                    <form id="publish-form" onsubmit="handlePublish(event)" class="space-y-3">
+                        
+                        <div class="space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                            <label class="text-xs font-semibold text-slate-600">Маршрут следования</label>
+                            
+                            <input type="text" id="pub-from" required placeholder="Пункт отправления (А)" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
+                            
+                            <div id="stops-container" class="space-y-2"></div>
+
+                            <button type="button" onclick="addStopInput()" class="text-xs text-indigo-600 font-medium flex items-center gap-1 py-1 hover:underline">
+                                <i class="fa-solid fa-plus-circle"></i> + Добавить промежуточную остановку
+                            </button>
+
+                            <input type="text" id="pub-to" required placeholder="Конечный пункт (В)" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[11px] font-semibold text-slate-600 block mb-1">Дата</label>
+                                <input type="date" id="pub-date" required class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-semibold text-slate-600 block mb-1">Время выезда</label>
+                                <input type="time" id="pub-time" required class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[11px] font-semibold text-slate-600 block mb-1">Цена за место (₽)</label>
+                                <input type="number" id="pub-price" required min="50" placeholder="500" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-semibold text-slate-600 block mb-1">Свободных мест</label>
+                                <select id="pub-seats" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
+                                    <option value="1">1 место</option>
+                                    <option value="2">2 места</option>
+                                    <option value="3" selected>3 места</option>
+                                    <option value="4">4 места</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="text-[11px] font-semibold text-slate-600">Телефон для связи</label>
+                                <span class="text-[10px] text-indigo-600 italic">Автоподстановка из профиля</span>
+                            </div>
+                            <input type="tel" id="pub-phone" placeholder="+7 (900) 000-00-00" class="w-full p-2 bg-indigo-50/50 border border-indigo-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500 font-medium text-slate-800">
+                        </div>
+
+                        <div>
+                            <label class="text-[11px] font-semibold text-slate-600 block mb-1">Комментарий</label>
+                            <textarea id="pub-comment" rows="2" placeholder="Место встречи, условия багажа, детское кресло..." class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500"></textarea>
+                        </div>
+
+                        <button type="submit" class="w-full vk-bg text-white py-2.5 rounded-xl font-medium text-xs hover:opacity-95 transition shadow-md">
+                            Опубликовать поездку
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- TAB 3: MY RIDES -->
+            <section id="tab-my-rides" class="space-y-4 hidden">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-base font-bold text-slate-800">Мои предложенные поездки</h2>
+                    <span class="text-xs text-slate-500 font-medium">Управление</span>
+                </div>
+                <div id="my-rides-list" class="space-y-2.5">
+                    <!-- Populated by JS -->
+                </div>
+            </section>
+
+        </main>
+
+        <!-- DETAIL RIDE MODAL DRAWER -->
+        <div id="detail-modal" class="modal-overlay" onclick="closeModalOnBackdrop(event)">
+            <div class="modal-sheet relative space-y-4" onclick="event.stopPropagation()">
+                <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-1"></div>
+
+                <button onclick="closeModal()" class="absolute right-4 top-4 text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full w-7 h-7 flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+
+                <div class="flex items-center justify-between pr-8">
+                    <div class="flex items-center gap-3">
+                        <img id="modal-driver-avatar" src="" alt="" class="w-11 h-11 rounded-full object-cover border border-slate-100 shadow-sm">
+                        <div>
+                            <h3 id="modal-driver-name" class="font-bold text-slate-800 text-xs"></h3>
+                            <span class="text-[10px] text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full font-medium">Профиль ВКонтакте</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100 flex items-center justify-between">
+                    <div>
+                        <div class="text-[10px] text-slate-400">Стоимость</div>
+                        <div id="modal-price" class="text-lg font-black text-indigo-600"></div>
+                        <div class="text-[10px] text-slate-400">за 1 место</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-[10px] text-slate-400">Дата и время</div>
+                        <div id="modal-datetime" class="text-xs font-bold text-slate-800 mt-0.5"></div>
+                        <div id="modal-seats" class="text-xs text-indigo-700 font-semibold mt-0.5"></div>
+                    </div>
+                </div>
+
+                <!-- Маршрут и Комментарий водителя -->
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Маршрут поездки</label>
+                    <div id="modal-route" class="bg-indigo-50/60 p-2.5 rounded-xl border border-indigo-100 text-xs font-medium text-slate-800 space-y-1">
+                    </div>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Комментарий водителя</label>
+                    <p id="modal-comment" class="text-xs text-slate-600 italic bg-slate-50 p-2.5 rounded-xl border border-slate-100 leading-relaxed"></p>
+                </div>
+
+                <!-- Protected Contact Box for Unauthorized Users -->
+                <div id="auth-required-banner" class="bg-indigo-50 border border-indigo-200 p-3.5 rounded-2xl text-center space-y-2 hidden">
+                    <div class="text-indigo-900 font-bold text-xs flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-lock text-indigo-600"></i> Контакты водителя скрыты
+                    </div>
+                    <p class="text-[11px] text-slate-600 leading-relaxed">Чтобы увидеть номер телефона и написать водителю ВКонтакте, нужно авторизоваться.</p>
+                    <button onclick="openLoginModal()" class="w-full vk-bg text-white py-2 rounded-xl text-xs font-medium shadow-sm">
+                        Быстрый вход через VK ID
+                    </button>
+                </div>
+
+                <div id="modal-contact-actions" class="space-y-2">
+                    <div id="modal-owner-actions" class="hidden pt-1 pb-1">
+                        <button id="btn-modal-edit" onclick="openEditFromDetail()" class="w-full bg-slate-100 text-slate-800 hover:bg-slate-200 py-2.5 rounded-xl font-medium text-xs transition flex items-center justify-center gap-2 border border-slate-200">
+                            <i class="fa-solid fa-pen-to-square text-indigo-600"></i> Редактировать эту поездку
+                        </button>
+                    </div>
+
+                    <div class="pt-1 space-y-2">
+                        <button id="btn-vk" onclick="actionVK()" class="w-full vk-bg text-white py-2.5 rounded-xl font-medium text-xs hover:opacity-95 transition shadow-sm flex items-center justify-center gap-2">
+                            <i class="fa-brands fa-vk text-sm"></i> Написать водителю ВКонтакте
+                        </button>
+                        
+                        <button id="btn-phone" onclick="actionPhone()" class="w-full bg-emerald-600 text-white py-2.5 rounded-xl font-medium text-xs hover:bg-emerald-700 transition shadow-sm flex items-center justify-center gap-2 hidden">
+                            <i class="fa-solid fa-phone text-xs"></i> Позвонить водителю
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- AUTH LOGIN MODAL -->
+        <div id="login-modal" class="modal-overlay" onclick="closeLoginModalOnBackdrop(event)">
+            <div class="modal-sheet relative space-y-4" onclick="event.stopPropagation()">
+                <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-1"></div>
+
+                <button onclick="closeLoginModal()" class="absolute right-4 top-4 text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full w-7 h-7 flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+
+                <div class="text-center space-y-2 pt-2">
+                    <div class="w-12 h-12 vk-bg text-white rounded-2xl flex items-center justify-center mx-auto text-xl shadow-md">
+                        <i class="fa-solid fa-arrows-left-right"></i>
+                    </div>
+                    <h3 class="font-bold text-slate-800 text-sm">Авторизация в Туда-Сюда</h3>
+                    <p class="text-xs text-slate-500 max-w-xs mx-auto">Войдите, чтобы связываться с водителями и публиковать свои поездки</p>
+                </div>
+
+                <div class="space-y-2 pt-2">
+                    <button onclick="performDemoLogin('vk')" class="w-full vk-bg text-white py-3 rounded-xl font-medium text-xs shadow-md flex items-center justify-center gap-2">
+                        <i class="fa-brands fa-vk text-base"></i> Войти через VK ID
+                    </button>
+                    <button onclick="performDemoLogin('phone')" class="w-full bg-slate-100 text-slate-700 hover:bg-slate-200 py-3 rounded-xl font-medium text-xs flex items-center justify-center gap-2 transition">
+                        <i class="fa-solid fa-mobile-screen-button text-slate-500"></i> по Номеру телефона
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- EDIT RIDE MODAL DRAWER -->
+        <div id="edit-ride-modal" class="modal-overlay" onclick="closeEditRideModalOnBackdrop(event)">
+            <div class="modal-sheet relative space-y-4" onclick="event.stopPropagation()">
+                <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-1"></div>
+
+                <button onclick="closeEditRideModal()" class="absolute right-4 top-4 text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full w-7 h-7 flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+
+                <div class="flex items-center gap-2 border-b border-slate-100 pb-2">
+                    <i class="fa-solid fa-pen-to-square text-indigo-600 text-base"></i>
+                    <h3 class="font-bold text-slate-800 text-sm">Редактировать поездку</h3>
+                </div>
+
+                <form id="edit-ride-form" onsubmit="handleSaveEditedRide(event)" class="space-y-3">
+                    <input type="hidden" id="edit-ride-id">
+
+                    <div class="space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <label class="text-xs font-semibold text-slate-600">Маршрут следования</label>
+                        
+                        <input type="text" id="edit-pub-from" required placeholder="Пункт отправления (А)" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
+                        
+                        <div id="edit-stops-container" class="space-y-2"></div>
+
+                        <button type="button" onclick="addEditStopInput()" class="text-xs text-indigo-600 font-medium flex items-center gap-1 py-1 hover:underline">
+                            <i class="fa-solid fa-plus-circle"></i> + Добавить промежуточную остановку
+                        </button>
+
+                        <input type="text" id="edit-pub-to" required placeholder="Конечный пункт (В)" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-[11px] font-semibold text-slate-600 block mb-1">Дата</label>
+                            <input type="date" id="edit-pub-date" required class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-semibold text-slate-600 block mb-1">Время выезда</label>
+                            <input type="time" id="edit-pub-time" required class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-[11px] font-semibold text-slate-600 block mb-1">Цена за место (₽)</label>
+                            <input type="number" id="edit-pub-price" required min="50" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-semibold text-slate-600 block mb-1">Свободных мест</label>
+                            <select id="edit-pub-seats" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
+                                <option value="1">1 место</option>
+                                <option value="2">2 места</option>
+                                <option value="3">3 места</option>
+                                <option value="4">4 места</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="text-[11px] font-semibold text-slate-600 block mb-1">Телефон для связи</label>
+                        <input type="tel" id="edit-pub-phone" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
+                    </div>
+
+                    <div>
+                        <label class="text-[11px] font-semibold text-slate-600 block mb-1">Комментарий</label>
+                        <textarea id="edit-pub-comment" rows="2" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500"></textarea>
+                    </div>
+
+                    <div class="flex gap-2 pt-1">
+                        <button type="submit" class="flex-1 vk-bg text-white py-2.5 rounded-xl font-medium text-xs hover:opacity-95 transition shadow-sm">
+                            Сохранить изменения
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- PROFILE / CABINET MODAL -->
+        <div id="profile-modal" class="modal-overlay" onclick="closeProfileModalOnBackdrop(event)">
+            <div class="modal-sheet relative space-y-4" onclick="event.stopPropagation()">
+                <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-1"></div>
+
+                <button onclick="closeProfileModal()" class="absolute right-4 top-4 text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full w-7 h-7 flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+
+                <div class="text-center space-y-2">
+                    <img id="cabinet-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" class="w-16 h-16 rounded-full object-cover mx-auto border-2 border-indigo-500 shadow-sm">
+                    <div>
+                        <h3 id="cabinet-name" class="font-bold text-slate-800 text-sm">Анастасия Иванова</h3>
+                        <span class="text-[10px] bg-emerald-50 text-emerald-600 font-semibold px-2 py-0.5 rounded-full border border-emerald-200">
+                            <i class="fa-solid fa-check text-[9px] mr-1"></i>Авторизован через VK ID
+                        </span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-3 text-xs">
+                    <h4 class="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Данные аккаунта</h4>
+                    
+                    <div>
+                        <label class="text-[11px] font-semibold text-slate-600 block mb-1">Имя и Фамилия</label>
+                        <input type="text" id="edit-name" value="Анастасия Иванова" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
+                    </div>
+
+                    <div>
+                        <label class="text-[11px] font-semibold text-slate-600 block mb-1">Телефон по умолчанию</label>
+                        <input type="tel" id="edit-phone" value="+7 (999) 888-77-66" placeholder="+7 (900) 000-00-00" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
+                        <p class="text-[10px] text-slate-400 mt-1">Этот номер будет автоматически подставляться при публикации поездок.</p>
+                    </div>
+
+                    <button onclick="saveProfile()" class="w-full vk-bg text-white py-2 rounded-xl font-medium text-xs hover:opacity-95 transition shadow-sm">
+                        Сохранить изменения
+                    </button>
+                </div>
+
+                <div class="bg-indigo-50 border border-indigo-100 p-3 rounded-2xl text-slate-700 text-[11px] leading-relaxed space-y-2">
+                    <div class="font-bold text-indigo-900 flex items-center gap-1.5">
+                        <i class="fa-solid fa-globe"></i> Для отдельного сайта:
+                    </div>
+                    <p class="text-slate-600">На независимом веб-сайте здесь будет доступна быстрая регистрация по коду из СМС или в 1 клик через VK ID.</p>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Custom Toast Notification -->
+        <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-4 py-2.5 rounded-xl shadow-xl z-50 hidden opacity-0 transition-opacity duration-300 flex items-center gap-2">
+            <i class="fa-solid fa-circle-info text-indigo-400"></i>
+            <span id="toast-text">Уведомление</span>
+        </div>
+
+        <!-- Bottom Navigation Bar -->
+        <nav class="fixed bottom-0 w-full max-w-md bg-white border-t border-slate-200 flex justify-around py-2 z-30">
+            <button onclick="switchTab('search')" id="nav-search" class="flex flex-col items-center gap-1 active-tab w-1/3">
+                <i class="fa-solid fa-magnifying-glass text-lg"></i>
+                <span class="text-[11px] font-medium">Поиск</span>
+            </button>
+            <button onclick="switchTab('publish')" id="nav-publish" class="flex flex-col items-center gap-1 inactive-tab w-1/3">
+                <i class="fa-solid fa-plus-circle text-lg"></i>
+                <span class="text-[11px] font-medium">Создать</span>
+            </button>
+            <button onclick="switchTab('my-rides')" id="nav-my-rides" class="flex flex-col items-center gap-1 inactive-tab w-1/3">
+                <i class="fa-solid fa-car text-lg"></i>
+                <span class="text-[11px] font-medium">Мои поездки</span>
+            </button>
+        </nav>
+
+    </div>
+
+    <script>
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('search-date').value = today;
+        document.getElementById('pub-date').value = today;
+
+        let activeSelectedRide = null;
+
+        // Current User Profile State
+        let isAuthenticated = true;
+        let currentUser = {
+            name: "Анастасия Иванова",
+            avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
+            phone: "+7 (999) 888-77-66"
+        };
+
+        // Mock Initial Rides Data
+        let rides = [
+            {
+                id: 1,
+                driverName: "Анастасия Иванова",
+                driverAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
+                route: ["Москва", "Чебоксары", "Казань"],
+                date: today,
+                time: "10:00",
+                price: 1000,
+                seats: 3,
+                phone: "+7 (999) 888-77-66",
+                comment: "Выезд с парковки гипермаркета. Комфортный салон."
+            },
+            {
+                id: 2,
+                driverName: "Алексей Смирнов",
+                driverAvatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80",
+                route: ["Москва", "Владимир", "Нижний Новгород"],
+                date: today,
+                time: "08:30",
+                price: 700,
+                seats: 3,
+                phone: "+7 (910) 123-45-67",
+                comment: "Еду на кроссовере. Багажник свободен."
+            },
+            {
+                id: 3,
+                driverName: "Елена Ковалева",
+                driverAvatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80",
+                route: ["Москва", "Покров", "Владимир"],
+                date: today,
+                time: "12:00",
+                price: 500,
+                seats: 2,
+                phone: "",
+                comment: "Тихая спокойная поездка. Без курения."
+            }
+        ];
+
+        function isRideOwner(ride) {
+            return ride.driverName === currentUser.name || ride.driverName === "Анастасия Иванова";
+        }
+
+        function syncProfileUI() {
+            const headerName = document.getElementById('header-name');
+            const headerIcon = document.getElementById('header-icon');
+
+            if (isAuthenticated) {
+                headerName.innerText = currentUser.name.split(' ')[0];
+                headerIcon.className = 'fa-solid fa-gear text-[10px] opacity-80';
+            } else {
+                headerName.innerText = 'Войти';
+                headerIcon.className = 'fa-solid fa-right-to-bracket text-[10px] opacity-80';
+            }
+
+            document.getElementById('header-avatar').src = currentUser.avatar;
+            document.getElementById('cabinet-avatar').src = currentUser.avatar;
+            document.getElementById('cabinet-name').innerText = currentUser.name;
+            document.getElementById('edit-name').value = currentUser.name;
+            document.getElementById('edit-phone').value = currentUser.phone;
+            document.getElementById('pub-phone').value = currentUser.phone;
+        }
+
+        function handleHeaderProfileClick() {
+            if (!isAuthenticated) {
+                openLoginModal();
+            } else {
+                openProfileModal();
+            }
+        }
+
+        function openLoginModal() {
+            document.getElementById('login-modal').classList.add('open');
+        }
+
+        function closeLoginModal() {
+            document.getElementById('login-modal').classList.remove('open');
+        }
+
+        function closeLoginModalOnBackdrop(e) {
+            closeLoginModal();
+        }
+
+        function performDemoLogin(type) {
+            isAuthenticated = true;
+            syncProfileUI();
+            closeLoginModal();
+            showToast('Успешный вход в аккаунт!');
+            if (activeSelectedRide) {
+                openRideDetail(activeSelectedRide.id);
+            }
+        }
+
+        function renderRides(itemsToRender = rides) {
+            const container = document.getElementById('rides-container');
+
+            // Сортировка поездок по хронологии даты и времени (ранние выезды сверху)
+            const sortedItems = [...itemsToRender].sort((a, b) => {
+                const dateTimeA = `${a.date} ${a.time}`;
+                const dateTimeB = `${b.date} ${b.time}`;
+                return dateTimeA.localeCompare(dateTimeB);
+            });
+
+            document.getElementById('rides-count').innerText = `Всего: ${sortedItems.length}`;
+
+            if (sortedItems.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-10 bg-white rounded-2xl border border-slate-100">
+                        <i class="fa-solid fa-car-side text-3xl text-slate-300 mb-2"></i>
+                        <p class="text-xs font-medium text-slate-600">Поездок по данному маршруту не найдено</p>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Попробуйте изменить дату или города</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = sortedItems.map(ride => {
+                const routeFormatted = ride.route.join(' ➔ ');
+                const isOwner = isRideOwner(ride);
+                return `
+                    <div onclick="openRideDetail(${ride.id})" class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm space-y-2 hover:border-indigo-300 active:scale-[0.99] transition cursor-pointer">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2.5">
+                                <img src="${ride.driverAvatar}" alt="${ride.driverName}" class="w-9 h-9 rounded-full object-cover border border-slate-100">
+                                <div>
+                                    <div class="flex items-center gap-1.5">
+                                        <h4 class="text-xs font-bold text-slate-800">${ride.driverName}</h4>
+                                        ${isOwner ? '<span class="text-[9px] bg-indigo-100 text-indigo-700 px-1.5 py-0.2 rounded font-bold">Вы</span>' : ''}
+                                    </div>
+                                    <span class="text-[10px] text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded font-medium">Профиль VK</span>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-sm font-black text-indigo-600">${ride.price} ₽</div>
+                                <div class="text-[10px] text-slate-400">за 1 место</div>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-50 p-2 rounded-xl border border-slate-100 text-xs">
+                            <div class="flex items-center font-bold text-slate-700 gap-1.5">
+                                <i class="fa-regular fa-clock text-indigo-500"></i>
+                                <span>${ride.time}</span>
+                                <span class="text-slate-300">•</span>
+                                <span class="text-slate-500 font-normal text-[11px]">${ride.date}</span>
+                            </div>
+                            <div class="font-medium text-slate-800 mt-0.5 truncate">
+                                ${routeFormatted}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderMyRides() {
+            const container = document.getElementById('my-rides-list');
+            if (!container) return;
+
+            const myRides = rides.filter(r => isRideOwner(r));
+
+            if (myRides.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 bg-white rounded-2xl border border-slate-100 space-y-2">
+                        <i class="fa-solid fa-car-side text-2xl text-slate-300"></i>
+                        <p class="text-xs font-medium text-slate-600">У вас пока нет предложенных поездок</p>
+                        <button onclick="switchTab('publish')" class="text-xs vk-text font-semibold hover:underline">+ Опубликовать первую поездку</button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = myRides.map(ride => {
+                const routeFormatted = ride.route.join(' ➔ ');
+                return `
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100">
+                                ${ride.date} в ${ride.time}
+                            </span>
+                            <span class="text-xs font-black text-slate-800">${ride.price} ₽</span>
+                        </div>
+
+                        <div class="text-xs font-semibold text-slate-800 bg-slate-50 p-2 rounded-xl border border-slate-100">
+                            ${routeFormatted}
+                        </div>
+
+                        <div class="flex items-center justify-between pt-1 border-t border-slate-100">
+                            <span class="text-[10px] text-slate-500 font-medium">Свободных мест: ${ride.seats}</span>
+                            <div class="flex items-center gap-2">
+                                <button onclick="openEditRideModal(${ride.id})" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center gap-1">
+                                    <i class="fa-solid fa-pen text-[10px]"></i> Изменить
+                                </button>
+                                <button onclick="deleteRide(${ride.id})" class="text-xs text-rose-500 hover:text-rose-700 font-medium px-2 py-1 rounded-lg bg-rose-50 border border-rose-100">
+                                    <i class="fa-solid fa-trash-can text-[10px]"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function openRideDetail(rideId) {
+            const ride = rides.find(r => r.id === rideId);
+            if (!ride) return;
+
+            activeSelectedRide = ride;
+
+            document.getElementById('modal-driver-avatar').src = ride.driverAvatar;
+            document.getElementById('modal-driver-name').innerText = ride.driverName;
+            document.getElementById('modal-price').innerText = `${ride.price} ₽`;
+            document.getElementById('modal-datetime').innerText = `${ride.time} (${ride.date})`;
+            document.getElementById('modal-seats').innerText = `Свободно мест: ${ride.seats}`;
+
+            document.getElementById('modal-comment').innerText = ride.comment ? `"${ride.comment}"` : "Комментарий не указан.";
+
+            document.getElementById('modal-route').innerHTML = ride.route.map((p, idx) => 
+                `<div class="flex items-center gap-2"><span class="w-4 h-4 rounded-full bg-indigo-100 text-indigo-600 text-[10px] font-bold flex items-center justify-center">${idx + 1}</span> <span>${p}</span></div>`
+            ).join('');
+
+            const authBanner = document.getElementById('auth-required-banner');
+            const contactActions = document.getElementById('modal-contact-actions');
+            const ownerActions = document.getElementById('modal-owner-actions');
+            const btnPhone = document.getElementById('btn-phone');
+
+            if (!isAuthenticated) {
+                authBanner.classList.remove('hidden');
+                contactActions.classList.add('hidden');
+            } else {
+                authBanner.classList.add('hidden');
+                contactActions.classList.remove('hidden');
+
+                if (isRideOwner(ride)) {
+                    ownerActions.classList.remove('hidden');
+                } else {
+                    ownerActions.classList.add('hidden');
+                }
+
+                if (ride.phone) {
+                    btnPhone.classList.remove('hidden');
+                } else {
+                    btnPhone.classList.add('hidden');
+                }
+            }
+
+            document.getElementById('detail-modal').classList.add('open');
+        }
+
+        function closeModal() {
+            document.getElementById('detail-modal').classList.remove('open');
+        }
+
+        function closeModalOnBackdrop(e) {
+            closeModal();
+        }
+
+        function openProfileModal() {
+            document.getElementById('profile-modal').classList.add('open');
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profile-modal').classList.remove('open');
+        }
+
+        function closeProfileModalOnBackdrop(e) {
+            closeProfileModal();
+        }
+
+        function openEditRideModal(rideId) {
+            const ride = rides.find(r => r.id === rideId);
+            if (!ride) return;
+
+            document.getElementById('edit-ride-id').value = ride.id;
+            document.getElementById('edit-pub-from').value = ride.route[0] || '';
+            document.getElementById('edit-pub-to').value = ride.route[ride.route.length - 1] || '';
+            document.getElementById('edit-pub-date').value = ride.date;
+            document.getElementById('edit-pub-time').value = ride.time;
+            document.getElementById('edit-pub-price').value = ride.price;
+            document.getElementById('edit-pub-seats').value = ride.seats;
+            document.getElementById('edit-pub-phone').value = ride.phone || '';
+            document.getElementById('edit-pub-comment').value = ride.comment || '';
+
+            const stopsContainer = document.getElementById('edit-stops-container');
+            stopsContainer.innerHTML = '';
+            
+            const intermediateStops = ride.route.slice(1, -1);
+            intermediateStops.forEach(stopName => {
+                addEditStopInput(stopName);
+            });
+
+            document.getElementById('edit-ride-modal').classList.add('open');
+        }
+
+        function openEditFromDetail() {
+            if (!activeSelectedRide) return;
+            closeModal();
+            openEditRideModal(activeSelectedRide.id);
+        }
+
+        function closeEditRideModal() {
+            document.getElementById('edit-ride-modal').classList.remove('open');
+        }
+
+        function closeEditRideModalOnBackdrop(e) {
+            closeEditRideModal();
+        }
+
+        function addEditStopInput(value = '') {
+            const container = document.getElementById('edit-stops-container');
+            const stopDiv = document.createElement('div');
+            stopDiv.className = 'flex items-center gap-1';
+            stopDiv.innerHTML = `
+                <input type="text" value="${value}" placeholder="Промежуточная остановка" class="edit-stop-input w-full p-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
+                <button type="button" onclick="this.parentElement.remove()" class="text-rose-400 hover:text-rose-600 p-1.5">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            `;
+            container.appendChild(stopDiv);
+        }
+
+        function handleSaveEditedRide(e) {
+            e.preventDefault();
+            const rideId = parseInt(document.getElementById('edit-ride-id').value);
+            const rideIndex = rides.findIndex(r => r.id === rideId);
+
+            if (rideIndex === -1) return;
+
+            const from = document.getElementById('edit-pub-from').value.trim();
+            const to = document.getElementById('edit-pub-to').value.trim();
+            const date = document.getElementById('edit-pub-date').value;
+            const time = document.getElementById('edit-pub-time').value;
+            const price = document.getElementById('edit-pub-price').value;
+            const seats = document.getElementById('edit-pub-seats').value;
+            const phone = document.getElementById('edit-pub-phone').value.trim();
+            const comment = document.getElementById('edit-pub-comment').value;
+
+            const stopInputs = document.querySelectorAll('.edit-stop-input');
+            const stops = Array.from(stopInputs).map(i => i.value.trim()).filter(v => v !== '');
+
+            const route = [from, ...stops, to];
+
+            rides[rideIndex] = {
+                ...rides[rideIndex],
+                route: route,
+                date: date,
+                time: time,
+                price: price,
+                seats: seats,
+                phone: phone,
+                comment: comment
+            };
+
+            closeEditRideModal();
+            showToast('Поездка успешно обновлена!');
+            renderRides();
+            renderMyRides();
+        }
+
+        function deleteRide(rideId) {
+            rides = rides.filter(r => r.id !== rideId);
+            showToast('Поездка отменена и удалена.');
+            renderRides();
+            renderMyRides();
+        }
+
+        function saveProfile() {
+            const newName = document.getElementById('edit-name').value.trim();
+            const newPhone = document.getElementById('edit-phone').value.trim();
+
+            if (newName) currentUser.name = newName;
+            currentUser.phone = newPhone;
+
+            syncProfileUI();
+            closeProfileModal();
+            showToast('Профиль и номер телефона успешно сохранены!');
+        }
+
+        function showToast(text) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-text').innerText = text;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.remove('opacity-0'), 10);
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.classList.add('hidden'), 300);
+            }, 3000);
+        }
+
+        function actionVK() {
+            if (!activeSelectedRide) return;
+            showToast(`Открытие личных сообщений VK с ${activeSelectedRide.driverName}`);
+        }
+
+        function actionPhone() {
+            if (!activeSelectedRide || !activeSelectedRide.phone) return;
+            showToast(`Вызов: ${activeSelectedRide.phone}`);
+        }
+
+        function addStopInput() {
+            const container = document.getElementById('stops-container');
+            const stopDiv = document.createElement('div');
+            stopDiv.className = 'flex items-center gap-1';
+            stopDiv.innerHTML = `
+                <input type="text" placeholder="Промежуточная остановка" class="stop-input w-full p-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
+                <button type="button" onclick="this.parentElement.remove()" class="text-rose-400 hover:text-rose-600 p-1.5">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            `;
+            container.appendChild(stopDiv);
+        }
+
+        function handlePublish(e) {
+            e.preventDefault();
+
+            if (!isAuthenticated) {
+                openLoginModal();
+                return;
+            }
+
+            const from = document.getElementById('pub-from').value.trim();
+            const to = document.getElementById('pub-to').value.trim();
+            const date = document.getElementById('pub-date').value;
+            const time = document.getElementById('pub-time').value;
+            const price = document.getElementById('pub-price').value;
+            const seats = document.getElementById('pub-seats').value;
+            const phone = document.getElementById('pub-phone').value.trim();
+            const comment = document.getElementById('pub-comment').value;
+
+            if (!from || !to || !date || !time || !price) {
+                showToast('Заполните обязательные поля');
+                return;
+            }
+
+            const stopInputs = document.querySelectorAll('.stop-input');
+            const stops = Array.from(stopInputs).map(i => i.value.trim()).filter(v => v !== '');
+
+            const route = [from, ...stops, to];
+
+            const newRide = {
+                id: Date.now(),
+                driverName: currentUser.name,
+                driverAvatar: currentUser.avatar,
+                route: route,
+                date: date,
+                time: time,
+                price: price,
+                seats: seats,
+                phone: phone || currentUser.phone,
+                comment: comment
+            };
+
+            rides.unshift(newRide);
+            showToast('Поездка успешно опубликована!');
+            
+            document.getElementById('publish-form').reset();
+            document.getElementById('stops-container').innerHTML = '';
+            syncProfileUI();
+            switchTab('search');
+            renderRides();
+        }
+
+        function filterRides() {
+            const from = document.getElementById('search-from').value.trim().toLowerCase();
+            const to = document.getElementById('search-to').value.trim().toLowerCase();
+            const selectedDate = document.getElementById('search-date').value;
+
+            const filtered = rides.filter(ride => {
+                // Проверка фильтрации по выбранной дате
+                if (selectedDate && ride.date !== selectedDate) {
+                    return false;
+                }
+
+                const routeLower = ride.route.map(r => r.toLowerCase());
+                
+                let fromIndex = from ? routeLower.findIndex(r => r.includes(from)) : -1;
+                let toIndex = to ? routeLower.findIndex(r => r.includes(to)) : -1;
+
+                if (from && to) {
+                    return fromIndex !== -1 && toIndex !== -1 && fromIndex < toIndex;
+                } else if (from) {
+                    return fromIndex !== -1;
+                } else if (to) {
+                    return toIndex !== -1;
+                }
+                return true;
+            });
+
+            if (from || to || selectedDate) {
+                document.getElementById('filter-info').classList.remove('hidden');
+                let infoParts = [];
+                if (from || to) infoParts.push(`${from || '...'} ➔ ${to || '...'}`);
+                if (selectedDate) infoParts.push(`Дата: ${selectedDate}`);
+                document.getElementById('filter-text').innerText = `Фильтр: ${infoParts.join(' | ')}`;
+            } else {
+                document.getElementById('filter-info').classList.add('hidden');
+            }
+
+            renderRides(filtered);
+        }
+
+        function resetFilter() {
+            document.getElementById('search-from').value = '';
+            document.getElementById('search-to').value = '';
+            document.getElementById('search-date').value = today;
+            document.getElementById('filter-info').classList.add('hidden');
+            renderRides(rides);
+        }
+
+        function switchTab(tabName) {
+            ['search', 'publish', 'my-rides'].forEach(tab => {
+                document.getElementById(`tab-${tab}`).classList.add('hidden');
+                document.getElementById(`nav-${tab}`).className = 'flex flex-col items-center gap-1 inactive-tab w-1/3';
+            });
+
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            document.getElementById(`nav-${tabName}`).className = 'flex flex-col items-center gap-1 active-tab w-1/3';
+
+            if (tabName === 'my-rides') {
+                renderMyRides();
+            } else if (tabName === 'publish') {
+                document.getElementById('pub-phone').value = currentUser.phone;
+            }
+        }
+
+        // Initialize UI & Data
+        syncProfileUI();
+        renderRides();
+    </script>
+</body>
+</html>
