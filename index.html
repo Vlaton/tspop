@@ -8,6 +8,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -54,7 +56,7 @@
             transform: translateY(0);
         }
         
-        /* Hide number input spinners */
+        /* Hide number input spinners completely */
         input[type=number]::-webkit-inner-spin-button,
         input[type=number]::-webkit-outer-spin-button {
             -webkit-appearance: none;
@@ -471,6 +473,11 @@
     </div>
 
     <script>
+        // Supabase Initialization
+        const SUPABASE_URL = "https://oqyjirsmbxjxahciomez.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_e-P2bnSM9fOAqg6U8SZohg_UIf4OFGz";
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('search-date').value = today;
         document.getElementById('pub-date').value = today;
@@ -486,11 +493,44 @@
             phone: ""
         };
 
-        // Clean initial state for live production (empty rides array)
+        // Live rides array synced with Supabase DB
         let rides = [];
 
+        async function fetchRidesFromSupabase() {
+            try {
+                const { data, error } = await supabase
+                    .from('rides')
+                    .select('*')
+                    .order('date', { ascending: true })
+                    .order('time', { ascending: true });
+
+                if (error) {
+                    console.error('Supabase fetch error:', error);
+                    return;
+                }
+
+                if (data) {
+                    rides = data.map(r => ({
+                        id: r.id,
+                        driverName: r.driver_name,
+                        driverAvatar: r.driver_avatar || currentUser.avatar,
+                        route: r.route || [],
+                        date: r.date,
+                        time: r.time,
+                        price: r.price,
+                        seats: r.seats,
+                        phone: r.phone,
+                        comment: r.comment,
+                        userId: r.user_id
+                    }));
+                }
+            } catch (err) {
+                console.error('Network error during Supabase fetch:', err);
+            }
+        }
+
         function isRideOwner(ride) {
-            return isAuthenticated && (ride.driverName === currentUser.name);
+            return isAuthenticated && (ride.driverName === currentUser.name || ride.userId === currentUser.name);
         }
 
         function isRideInFuture(ride) {
@@ -558,6 +598,7 @@
             if (activeSelectedRide) {
                 openRideDetail(activeSelectedRide.id);
             }
+            renderMyRides();
         }
 
         function renderRides(itemsToRender = null) {
@@ -862,12 +903,9 @@
             container.appendChild(stopDiv);
         }
 
-        function handleSaveEditedRide(e) {
+        async function handleSaveEditedRide(e) {
             e.preventDefault();
             const rideId = parseInt(document.getElementById('edit-ride-id').value);
-            const rideIndex = rides.findIndex(r => r.id === rideId);
-
-            if (rideIndex === -1) return;
 
             const from = document.getElementById('edit-pub-from').value.trim();
             const to = document.getElementById('edit-pub-to').value.trim();
@@ -883,36 +921,70 @@
 
             const route = [from, ...stops, to];
 
-            rides[rideIndex] = {
-                ...rides[rideIndex],
-                route: route,
-                date: date,
-                time: time,
-                price: price,
-                seats: seats,
-                phone: phone,
-                comment: comment
-            };
+            try {
+                const { error } = await supabase
+                    .from('rides')
+                    .update({
+                        route: route,
+                        date: date,
+                        time: time,
+                        price: Number(price),
+                        seats: seats,
+                        phone: phone,
+                        comment: comment
+                    })
+                    .eq('id', rideId);
 
-            closeEditRideModal();
-            showToast('Поездка успешно обновлена!');
-            if (isFilterActive) {
-                filterRides();
-            } else {
-                renderRides();
+                if (error) {
+                    console.error('Supabase update error:', error);
+                    showToast('Ошибка при сохранении изменений');
+                    return;
+                }
+
+                await fetchRidesFromSupabase();
+                closeEditRideModal();
+                showToast('Поездка успешно обновлена!');
+                
+                if (isFilterActive) {
+                    filterRides();
+                } else {
+                    renderRides();
+                }
+                renderMyRides();
+
+            } catch (err) {
+                console.error(err);
+                showToast('Ошибка сети при сохранении');
             }
-            renderMyRides();
         }
 
-        function deleteRide(rideId) {
-            rides = rides.filter(r => r.id !== rideId);
-            showToast('Поездка отменена и удалена.');
-            if (isFilterActive) {
-                filterRides();
-            } else {
-                renderRides();
+        async function deleteRide(rideId) {
+            try {
+                const { error } = await supabase
+                    .from('rides')
+                    .delete()
+                    .eq('id', rideId);
+
+                if (error) {
+                    console.error('Supabase delete error:', error);
+                    showToast('Ошибка при удалении поездки');
+                    return;
+                }
+
+                await fetchRidesFromSupabase();
+                showToast('Поездка отменена и удалена.');
+
+                if (isFilterActive) {
+                    filterRides();
+                } else {
+                    renderRides();
+                }
+                renderMyRides();
+
+            } catch (err) {
+                console.error(err);
+                showToast('Ошибка соединения');
             }
-            renderMyRides();
         }
 
         function saveProfile() {
@@ -961,7 +1033,7 @@
             container.appendChild(stopDiv);
         }
 
-        function handlePublish(e) {
+        async function handlePublish(e) {
             e.preventDefault();
 
             if (!isAuthenticated) {
@@ -994,33 +1066,48 @@
 
             const route = [from, ...stops, to];
 
-            const newRide = {
-                id: Date.now(),
-                driverName: currentUser.name,
-                driverAvatar: currentUser.avatar,
-                route: route,
-                date: date,
-                time: time,
-                price: price,
-                seats: seats,
-                phone: phone || currentUser.phone,
-                comment: comment
-            };
+            try {
+                const { data, error } = await supabase
+                    .from('rides')
+                    .insert([{
+                        driver_name: currentUser.name,
+                        driver_avatar: currentUser.avatar,
+                        route: route,
+                        date: date,
+                        time: time,
+                        price: Number(price),
+                        seats: seats,
+                        phone: phone || currentUser.phone,
+                        comment: comment,
+                        user_id: currentUser.name
+                    }])
+                    .select();
 
-            rides.unshift(newRide);
-            showToast('Поездка успешно опубликована!');
-            
-            document.getElementById('publish-form').reset();
-            document.getElementById('stops-container').innerHTML = '';
-            syncProfileUI();
+                if (error) {
+                    console.error('Supabase insert error:', error);
+                    showToast('Ошибка при публикации в базу');
+                    return;
+                }
 
-            // Set search input values to match published ride & perform filter automatically
-            document.getElementById('search-from').value = from;
-            document.getElementById('search-to').value = to;
-            document.getElementById('search-date').value = date;
-            
-            switchTab('search');
-            filterRides();
+                await fetchRidesFromSupabase();
+                showToast('Поездка успешно опубликована!');
+                
+                document.getElementById('publish-form').reset();
+                document.getElementById('stops-container').innerHTML = '';
+                syncProfileUI();
+
+                // Set search input values to match published ride & perform filter automatically
+                document.getElementById('search-from').value = from;
+                document.getElementById('search-to').value = to;
+                document.getElementById('search-date').value = date;
+                
+                switchTab('search');
+                filterRides();
+
+            } catch (err) {
+                console.error(err);
+                showToast('Ошибка соединения при публикации');
+            }
         }
 
         function filterRides() {
@@ -1084,9 +1171,14 @@
             }
         }
 
-        // Initialize UI & Data
-        syncProfileUI();
-        renderRides();
+        // Initial Load
+        async function initApp() {
+            syncProfileUI();
+            await fetchRidesFromSupabase();
+            renderRides();
+        }
+
+        initApp();
     </script>
 </body>
 </html>
