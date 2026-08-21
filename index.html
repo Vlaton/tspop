@@ -476,7 +476,7 @@
         // Supabase Initialization
         const SUPABASE_URL = "https://oqyjirsmbxjxahciomez.supabase.co";
         const SUPABASE_KEY = "sb_publishable_e-P2bnSM9fOAqg6U8SZohg_UIf4OFGz";
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('search-date').value = today;
@@ -498,7 +498,7 @@
 
         async function fetchRidesFromSupabase() {
             try {
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('rides')
                     .select('*')
                     .order('date', { ascending: true })
@@ -922,7 +922,7 @@
             const route = [from, ...stops, to];
 
             try {
-                const { error } = await supabase
+                const { error } = await supabaseClient
                     .from('rides')
                     .update({
                         route: route,
@@ -960,7 +960,7 @@
 
         async function deleteRide(rideId) {
             try {
-                const { error } = await supabase
+                const { error } = await supabaseClient
                     .from('rides')
                     .delete()
                     .eq('id', rideId);
@@ -1067,7 +1067,7 @@
             const route = [from, ...stops, to];
 
             try {
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('rides')
                     .insert([{
                         driver_name: currentUser.name,
