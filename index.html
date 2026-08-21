@@ -10,6 +10,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- VK Bridge Client for Mini Apps -->
+    <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -473,6 +475,11 @@
     </div>
 
     <script>
+        // VK Bridge Initialization
+        if (typeof vkBridge !== 'undefined') {
+            vkBridge.send('VKWebAppInit').catch(e => console.log('VK Bridge error:', e));
+        }
+
         // Supabase Initialization
         const SUPABASE_URL = "https://oqyjirsmbxjxahciomez.supabase.co";
         const SUPABASE_KEY = "sb_publishable_e-P2bnSM9fOAqg6U8SZohg_UIf4OFGz";
@@ -485,7 +492,7 @@
         let activeSelectedRide = null;
         let isFilterActive = false;
 
-        // Current User Profile State (Default unauthenticated guest mode)
+        // Current User Profile State
         let isAuthenticated = false;
         let currentUser = {
             name: "Пользователь",
@@ -495,6 +502,22 @@
 
         // Live rides array synced with Supabase DB
         let rides = [];
+
+        async function initVkUserData() {
+            if (typeof vkBridge !== 'undefined') {
+                try {
+                    const user = await vkBridge.send('VKWebAppGetUserInfo');
+                    if (user && user.first_name) {
+                        isAuthenticated = true;
+                        currentUser.name = `${user.first_name} ${user.last_name}`;
+                        currentUser.avatar = user.photo_200 || user.photo_100 || currentUser.avatar;
+                        syncProfileUI();
+                    }
+                } catch (e) {
+                    console.log('Outside VK environment or permission denied:', e);
+                }
+            }
+        }
 
         async function fetchRidesFromSupabase() {
             try {
@@ -588,7 +611,26 @@
             closeLoginModal();
         }
 
-        function performDemoLogin(type) {
+        async function performDemoLogin(type) {
+            if (type === 'vk' && typeof vkBridge !== 'undefined') {
+                try {
+                    const user = await vkBridge.send('VKWebAppGetUserInfo');
+                    if (user && user.first_name) {
+                        isAuthenticated = true;
+                        currentUser.name = `${user.first_name} ${user.last_name}`;
+                        currentUser.avatar = user.photo_200 || user.photo_100 || currentUser.avatar;
+                        syncProfileUI();
+                        closeLoginModal();
+                        showToast(`Добро пожаловать, ${user.first_name}!`);
+                        if (activeSelectedRide) openRideDetail(activeSelectedRide.id);
+                        renderMyRides();
+                        return;
+                    }
+                } catch (e) {
+                    console.log('VK Auth error:', e);
+                }
+            }
+
             isAuthenticated = true;
             currentUser.name = "Иван Петров";
             currentUser.phone = "+7 (900) 123-45-67";
@@ -1174,6 +1216,7 @@
         // Initial Load
         async function initApp() {
             syncProfileUI();
+            await initVkUserData();
             await fetchRidesFromSupabase();
             renderRides();
         }
