@@ -88,10 +88,10 @@
                 <h1 class="text-lg font-bold tracking-wide">Туда-Сюда</h1>
             </div>
             
-            <!-- Auth Status Button / Profile Cabinet -->
-            <button id="btn-header-profile" onclick="handleHeaderProfileClick()" class="flex items-center gap-2 bg-white/15 hover:bg-white/25 active:scale-95 transition pl-2 pr-2.5 py-1 rounded-full">
+            <!-- Auth Status Button / Profile Cabinet (Shifted left so native VK buttons don't overlap) -->
+            <button id="btn-header-profile" onclick="handleHeaderProfileClick()" class="flex items-center gap-2 bg-white/15 hover:bg-white/25 active:scale-95 transition pl-2.5 pr-4 py-1.5 rounded-full mr-16">
                 <img id="header-avatar" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80" alt="Avatar" class="w-6 h-6 rounded-full object-cover border border-white/40">
-                <span id="header-name" class="text-xs font-medium max-w-[80px] truncate">Войти</span>
+                <span id="header-name" class="text-xs font-medium max-w-[100px] truncate">Войти</span>
                 <i id="header-icon" class="fa-solid fa-right-to-bracket text-[10px] opacity-80"></i>
             </button>
         </header>
@@ -531,14 +531,16 @@
         }
 
         async function fetchUserPhoneFromDB() {
-            if (!currentUser.id) return;
+            if (!currentUser.id && !currentUser.name) return;
             try {
-                const { data, error } = await supabaseClient
-                    .from('rides')
-                    .select('phone')
-                    .eq('user_id', currentUser.id)
-                    .order('id', { ascending: false })
-                    .limit(1);
+                let query = supabaseClient.from('rides').select('phone').order('id', { ascending: false }).limit(1);
+                if (currentUser.id) {
+                    query = query.or(`user_id.eq.${currentUser.id},driver_name.eq.${currentUser.name}`);
+                } else {
+                    query = query.eq('driver_name', currentUser.name);
+                }
+
+                const { data, error } = await query;
 
                 if (data && data.length > 0 && data[0].phone) {
                     currentUser.phone = data[0].phone;
@@ -550,18 +552,21 @@
         }
 
         async function fetchMyRidesFromSupabase() {
-            if (!isAuthenticated || !currentUser.id) {
+            if (!isAuthenticated) {
                 renderMyRides();
                 return;
             }
 
             try {
-                const { data, error } = await supabaseClient
-                    .from('rides')
-                    .select('*')
-                    .eq('user_id', currentUser.id)
-                    .order('date', { ascending: true })
-                    .order('time', { ascending: true });
+                // Dual matching logic (by user_id OR driver_name) to guarantee fetching all published rides
+                let query = supabaseClient.from('rides').select('*');
+                if (currentUser.id) {
+                    query = query.or(`user_id.eq.${currentUser.id},driver_name.eq.${currentUser.name}`);
+                } else {
+                    query = query.eq('driver_name', currentUser.name);
+                }
+
+                const { data, error } = await query.order('date', { ascending: true }).order('time', { ascending: true });
 
                 if (error) {
                     console.error('Supabase fetch my rides error:', error);
@@ -590,7 +595,8 @@
         }
 
         function isRideOwner(ride) {
-            return isAuthenticated && (ride.userId === currentUser.id || ride.driverName === currentUser.name);
+            if (!isAuthenticated) return false;
+            return (ride.userId === currentUser.id || ride.driverName === currentUser.name || ride.userId === currentUser.name);
         }
 
         function isRideInFuture(ride) {
@@ -1099,7 +1105,12 @@
         function actionVK() {
             if (!activeSelectedRide) return;
             const targetId = activeSelectedRide.userId;
-            const url = (targetId && !isNaN(targetId)) ? `https://vk.com/im?sel=${targetId}` : `https://vk.com`;
+            
+            // Generate VK Messenger URL (if numeric ID, directly open chat window; otherwise open VK)
+            let url = 'https://vk.com/im';
+            if (targetId && !isNaN(targetId)) {
+                url = `https://vk.com/im?sel=${targetId}`;
+            }
 
             if (typeof vkBridge !== 'undefined') {
                 vkBridge.send('VKWebAppOpenURL', { url: url }).catch(() => {
@@ -1147,7 +1158,7 @@
 
             const rideDateTime = new Date(`${date}T${time}`);
             if (rideDateTime < new Date()) {
-                showToast('Выберите актуальную дату / время');
+                showToast('Выберите актуальную дату');
                 return;
             }
 
