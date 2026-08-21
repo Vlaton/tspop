@@ -54,6 +54,16 @@
             transform: translateY(0);
         }
         
+        /* Hide number input spinners */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     </style>
@@ -71,7 +81,7 @@
             
             <!-- Auth Status Button / Profile Cabinet -->
             <button id="btn-header-profile" onclick="handleHeaderProfileClick()" class="flex items-center gap-2 bg-white/15 hover:bg-white/25 active:scale-95 transition pl-2 pr-2.5 py-1 rounded-full">
-                <img id="header-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" class="w-6 h-6 rounded-full object-cover border border-white/40">
+                <img id="header-avatar" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80" alt="Avatar" class="w-6 h-6 rounded-full object-cover border border-white/40">
                 <span id="header-name" class="text-xs font-medium max-w-[80px] truncate">Войти</span>
                 <i id="header-icon" class="fa-solid fa-right-to-bracket text-[10px] opacity-80"></i>
             </button>
@@ -114,7 +124,7 @@
                 </div>
 
                 <!-- Feed Header -->
-                <div class="flex justify-between items-center pt-1">
+                <div id="feed-header-box" class="hidden flex justify-between items-center pt-1">
                     <h3 class="font-bold text-slate-800 text-sm">Доступные поездки</h3>
                     <span id="rides-count" class="text-xs text-slate-500 font-medium">Всего: 0</span>
                 </div>
@@ -130,7 +140,7 @@
             <section id="tab-publish" class="space-y-4 hidden">
                 <div class="bg-white p-1 space-y-4">
                     <h2 class="text-base font-bold text-slate-800">Опубликовать поездку</h2>
-                    <p class="text-xs text-slate-500">Укажите маршрут с остановками. Пассажиры по пути смогут увидеть ваше предложение.</p>
+                    <p class="text-[11px] text-slate-500 leading-snug">Укажите маршрут поездки. Можете добавить промежуточные пункты. Пассажиры по пути смогут увидеть ваше предложение.</p>
 
                     <form id="publish-form" onsubmit="handlePublish(event)" class="space-y-3">
                         
@@ -162,24 +172,22 @@
                         <div class="grid grid-cols-2 gap-2">
                             <div>
                                 <label class="text-[11px] font-semibold text-slate-600 block mb-1">Цена за место (₽)</label>
-                                <input type="number" id="pub-price" required min="50" placeholder="500" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
+                                <input type="number" id="pub-price" required min="50" placeholder="500" onwheel="this.blur()" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
                             </div>
                             <div>
-                                <label class="text-[11px] font-semibold text-slate-600 block mb-1">Свободных мест</label>
+                                <label class="text-[11px] font-semibold text-slate-600 block mb-1">Мест всего</label>
                                 <select id="pub-seats" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
                                     <option value="1">1 место</option>
                                     <option value="2">2 места</option>
                                     <option value="3" selected>3 места</option>
                                     <option value="4">4 места</option>
+                                    <option value="Несколько">Несколько</option>
                                 </select>
                             </div>
                         </div>
 
                         <div>
-                            <div class="flex items-center justify-between mb-1">
-                                <label class="text-[11px] font-semibold text-slate-600">Телефон для связи</label>
-                                <span class="text-[10px] text-indigo-600 italic">Автоподстановка из профиля</span>
-                            </div>
+                            <label class="text-[11px] font-semibold text-slate-600 block mb-1">Телефон для связи</label>
                             <input type="tel" id="pub-phone" placeholder="+7 (900) 000-00-00" class="w-full p-2 bg-indigo-50/50 border border-indigo-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500 font-medium text-slate-800">
                         </div>
 
@@ -201,7 +209,7 @@
                     <h2 class="text-base font-bold text-slate-800">Мои предложенные поездки</h2>
                     <span class="text-xs text-slate-500 font-medium">Управление</span>
                 </div>
-                <div id="my-rides-list" class="space-y-2.5">
+                <div id="my-rides-list" class="space-y-3">
                     <!-- Populated by JS -->
                 </div>
             </section>
@@ -219,7 +227,7 @@
 
                 <div class="flex items-center justify-between pr-8">
                     <div class="flex items-center gap-3">
-                        <img id="modal-driver-avatar" src="" alt="" class="w-11 h-11 rounded-full object-cover border border-slate-100 shadow-sm">
+                        <img id="modal-driver-avatar" src="" alt="Avatar" class="w-11 h-11 rounded-full object-cover border border-slate-100 shadow-sm">
                         <div>
                             <h3 id="modal-driver-name" class="font-bold text-slate-800 text-xs"></h3>
                             <span class="text-[10px] text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full font-medium">Профиль ВКонтакте</span>
@@ -240,7 +248,7 @@
                     </div>
                 </div>
 
-                <!-- Маршрут и Комментарий водителя -->
+                <!-- Route & Driver Comment -->
                 <div class="space-y-1">
                     <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Маршрут поездки</label>
                     <div id="modal-route" class="bg-indigo-50/60 p-2.5 rounded-xl border border-indigo-100 text-xs font-medium text-slate-800 space-y-1">
@@ -357,15 +365,16 @@
                     <div class="grid grid-cols-2 gap-2">
                         <div>
                             <label class="text-[11px] font-semibold text-slate-600 block mb-1">Цена за место (₽)</label>
-                            <input type="number" id="edit-pub-price" required min="50" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
+                            <input type="number" id="edit-pub-price" required min="50" onwheel="this.blur()" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
                         </div>
                         <div>
-                            <label class="text-[11px] font-semibold text-slate-600 block mb-1">Свободных мест</label>
+                            <label class="text-[11px] font-semibold text-slate-600 block mb-1">Мест всего</label>
                             <select id="edit-pub-seats" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
                                 <option value="1">1 место</option>
                                 <option value="2">2 места</option>
                                 <option value="3">3 места</option>
                                 <option value="4">4 места</option>
+                                <option value="Несколько">Несколько</option>
                             </select>
                         </div>
                     </div>
@@ -399,9 +408,9 @@
                 </button>
 
                 <div class="text-center space-y-2">
-                    <img id="cabinet-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" class="w-16 h-16 rounded-full object-cover mx-auto border-2 border-indigo-500 shadow-sm">
+                    <img id="cabinet-avatar" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80" alt="Avatar" class="w-16 h-16 rounded-full object-cover mx-auto border-2 border-indigo-500 shadow-sm">
                     <div>
-                        <h3 id="cabinet-name" class="font-bold text-slate-800 text-sm">Анастасия Иванова</h3>
+                        <h3 id="cabinet-name" class="font-bold text-slate-800 text-sm">Пользователь</h3>
                         <span class="text-[10px] bg-emerald-50 text-emerald-600 font-semibold px-2 py-0.5 rounded-full border border-emerald-200">
                             <i class="fa-solid fa-check text-[9px] mr-1"></i>Авторизован через VK ID
                         </span>
@@ -413,12 +422,12 @@
                     
                     <div>
                         <label class="text-[11px] font-semibold text-slate-600 block mb-1">Имя и Фамилия</label>
-                        <input type="text" id="edit-name" value="Анастасия Иванова" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
+                        <input type="text" id="edit-name" value="Пользователь" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
                     </div>
 
                     <div>
                         <label class="text-[11px] font-semibold text-slate-600 block mb-1">Телефон по умолчанию</label>
-                        <input type="tel" id="edit-phone" value="+7 (999) 888-77-66" placeholder="+7 (900) 000-00-00" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
+                        <input type="tel" id="edit-phone" value="" placeholder="+7 (900) 000-00-00" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
                         <p class="text-[10px] text-slate-400 mt-1">Этот номер будет автоматически подставляться при публикации поездок.</p>
                     </div>
 
@@ -467,57 +476,36 @@
         document.getElementById('pub-date').value = today;
 
         let activeSelectedRide = null;
+        let isFilterActive = false;
 
-        // Current User Profile State
-        let isAuthenticated = true;
+        // Current User Profile State (Default unauthenticated guest mode)
+        let isAuthenticated = false;
         let currentUser = {
-            name: "Анастасия Иванова",
-            avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
-            phone: "+7 (999) 888-77-66"
+            name: "Пользователь",
+            avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80",
+            phone: ""
         };
 
-        // Mock Initial Rides Data
-        let rides = [
-            {
-                id: 1,
-                driverName: "Анастасия Иванова",
-                driverAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
-                route: ["Москва", "Чебоксары", "Казань"],
-                date: today,
-                time: "10:00",
-                price: 1000,
-                seats: 3,
-                phone: "+7 (999) 888-77-66",
-                comment: "Выезд с парковки гипермаркета. Комфортный салон."
-            },
-            {
-                id: 2,
-                driverName: "Алексей Смирнов",
-                driverAvatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80",
-                route: ["Москва", "Владимир", "Нижний Новгород"],
-                date: today,
-                time: "08:30",
-                price: 700,
-                seats: 3,
-                phone: "+7 (910) 123-45-67",
-                comment: "Еду на кроссовере. Багажник свободен."
-            },
-            {
-                id: 3,
-                driverName: "Елена Ковалева",
-                driverAvatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80",
-                route: ["Москва", "Покров", "Владимир"],
-                date: today,
-                time: "12:00",
-                price: 500,
-                seats: 2,
-                phone: "",
-                comment: "Тихая спокойная поездка. Без курения."
-            }
-        ];
+        // Clean initial state for live production (empty rides array)
+        let rides = [];
 
         function isRideOwner(ride) {
-            return ride.driverName === currentUser.name || ride.driverName === "Анастасия Иванова";
+            return isAuthenticated && (ride.driverName === currentUser.name);
+        }
+
+        function isRideInFuture(ride) {
+            const now = new Date();
+            const rideDateTime = new Date(`${ride.date}T${ride.time}`);
+            return rideDateTime >= now;
+        }
+
+        function isRideWithin30DaysPast(ride) {
+            const now = new Date();
+            const rideDateTime = new Date(`${ride.date}T${ride.time}`);
+            if (rideDateTime >= now) return false;
+
+            const daysDiff = (now - rideDateTime) / (1000 * 60 * 60 * 24);
+            return daysDiff <= 31;
         }
 
         function syncProfileUI() {
@@ -562,6 +550,8 @@
 
         function performDemoLogin(type) {
             isAuthenticated = true;
+            currentUser.name = "Иван Петров";
+            currentUser.phone = "+7 (900) 123-45-67";
             syncProfileUI();
             closeLoginModal();
             showToast('Успешный вход в аккаунт!');
@@ -570,16 +560,36 @@
             }
         }
 
-        function renderRides(itemsToRender = rides) {
+        function renderRides(itemsToRender = null) {
             const container = document.getElementById('rides-container');
+            const feedHeader = document.getElementById('feed-header-box');
 
-            // Сортировка поездок по хронологии даты и времени (ранние выезды сверху)
-            const sortedItems = [...itemsToRender].sort((a, b) => {
+            if (!isFilterActive && !itemsToRender) {
+                feedHeader.classList.add('hidden');
+                container.innerHTML = `
+                    <div class="text-center py-8 px-4 bg-white rounded-2xl border border-slate-200/80 shadow-sm space-y-2">
+                        <div class="w-10 h-10 vk-bg text-white rounded-xl flex items-center justify-center mx-auto text-lg shadow-sm">
+                            <i class="fa-solid fa-route"></i>
+                        </div>
+                        <p class="text-xs font-semibold text-slate-700 leading-relaxed max-w-xs mx-auto">
+                            Укажите маршрут и дату поездки, чтобы увидеть доступные варианты
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+
+            const items = itemsToRender || rides;
+
+            const futureActiveItems = items.filter(r => isRideInFuture(r));
+
+            const sortedItems = [...futureActiveItems].sort((a, b) => {
                 const dateTimeA = `${a.date} ${a.time}`;
                 const dateTimeB = `${b.date} ${b.time}`;
                 return dateTimeA.localeCompare(dateTimeB);
             });
 
+            feedHeader.classList.remove('hidden');
             document.getElementById('rides-count').innerText = `Всего: ${sortedItems.length}`;
 
             if (sortedItems.length === 0) {
@@ -635,9 +645,27 @@
             const container = document.getElementById('my-rides-list');
             if (!container) return;
 
+            if (!isAuthenticated) {
+                container.innerHTML = `
+                    <div class="text-center py-8 bg-white rounded-2xl border border-slate-100 space-y-3 p-4">
+                        <div class="w-10 h-10 vk-bg text-white rounded-xl flex items-center justify-center mx-auto text-lg shadow-sm">
+                            <i class="fa-solid fa-user-lock"></i>
+                        </div>
+                        <p class="text-xs font-semibold text-slate-700">Войдите в аккаунт, чтобы видеть ваши предложенные поездки</p>
+                        <button onclick="openLoginModal()" class="w-full vk-bg text-white py-2 rounded-xl text-xs font-medium shadow-sm">
+                            Войти в аккаунт
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
             const myRides = rides.filter(r => isRideOwner(r));
 
-            if (myRides.length === 0) {
+            const activeMyRides = myRides.filter(r => isRideInFuture(r)).sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
+            const pastMyRides = myRides.filter(r => isRideWithin30DaysPast(r)).sort((a, b) => `${b.date} ${b.time}`.localeCompare(`${a.date} ${a.time}`));
+
+            if (activeMyRides.length === 0 && pastMyRides.length === 0) {
                 container.innerHTML = `
                     <div class="text-center py-8 bg-white rounded-2xl border border-slate-100 space-y-2">
                         <i class="fa-solid fa-car-side text-2xl text-slate-300"></i>
@@ -648,35 +676,72 @@
                 return;
             }
 
-            container.innerHTML = myRides.map(ride => {
-                const routeFormatted = ride.route.join(' ➔ ');
-                return `
-                    <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm space-y-2.5">
-                        <div class="flex items-center justify-between">
-                            <span class="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100">
-                                ${ride.date} в ${ride.time}
-                            </span>
-                            <span class="text-xs font-black text-slate-800">${ride.price} ₽</span>
-                        </div>
+            let html = '';
 
-                        <div class="text-xs font-semibold text-slate-800 bg-slate-50 p-2 rounded-xl border border-slate-100">
-                            ${routeFormatted}
-                        </div>
-
-                        <div class="flex items-center justify-between pt-1 border-t border-slate-100">
-                            <span class="text-[10px] text-slate-500 font-medium">Свободных мест: ${ride.seats}</span>
-                            <div class="flex items-center gap-2">
-                                <button onclick="openEditRideModal(${ride.id})" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center gap-1">
-                                    <i class="fa-solid fa-pen text-[10px]"></i> Изменить
-                                </button>
-                                <button onclick="deleteRide(${ride.id})" class="text-xs text-rose-500 hover:text-rose-700 font-medium px-2 py-1 rounded-lg bg-rose-50 border border-rose-100">
-                                    <i class="fa-solid fa-trash-can text-[10px]"></i>
-                                </button>
+            if (activeMyRides.length > 0) {
+                html += activeMyRides.map(ride => {
+                    const routeFormatted = ride.route.join(' ➔ ');
+                    return `
+                        <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm space-y-2.5">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100">
+                                    ${ride.date} в ${ride.time}
+                                </span>
+                                <span class="text-xs font-black text-slate-800">${ride.price} ₽</span>
                             </div>
+
+                            <div class="text-xs font-semibold text-slate-800 bg-slate-50 p-2 rounded-xl border border-slate-100">
+                                ${routeFormatted}
+                            </div>
+
+                            <div class="flex items-center justify-between pt-1 border-t border-slate-100">
+                                <span class="text-[10px] text-slate-500 font-medium">Мест всего: ${ride.seats}</span>
+                                <div class="flex items-center gap-2">
+                                    <button onclick="openEditRideModal(${ride.id})" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center gap-1">
+                                        <i class="fa-solid fa-pen text-[10px]"></i> Изменить
+                                    </button>
+                                    <button onclick="deleteRide(${ride.id})" class="text-xs text-rose-500 hover:text-rose-700 font-medium px-2 py-1 rounded-lg bg-rose-50 border border-rose-100">
+                                        <i class="fa-solid fa-trash-can text-[10px]"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                html += `<p class="text-xs text-slate-400 italic">Нет актуальных предстоящих поездок</p>`;
+            }
+
+            if (pastMyRides.length > 0) {
+                html += `
+                    <div class="pt-3 pb-1">
+                        <div class="bg-slate-100 text-slate-500 text-[11px] font-bold px-3 py-1.5 rounded-xl border border-slate-200/60 flex items-center gap-1.5">
+                            <i class="fa-solid fa-clock-rotate-left text-slate-400 text-xs"></i>
+                            Прошедшие поездки за 1 месяц
                         </div>
                     </div>
                 `;
-            }).join('');
+
+                html += pastMyRides.map(ride => {
+                    const routeFormatted = ride.route.join(' ➔ ');
+                    return `
+                        <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm space-y-2 opacity-80">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[10px] font-semibold text-slate-400 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
+                                    ${ride.date} в ${ride.time} (Завершена)
+                                </span>
+                                <span class="text-xs font-bold text-slate-500">${ride.price} ₽</span>
+                            </div>
+
+                            <div class="text-xs font-medium text-slate-600 bg-slate-50 p-2 rounded-xl border border-slate-100">
+                                ${routeFormatted}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            container.innerHTML = html;
         }
 
         function openRideDetail(rideId) {
@@ -689,7 +754,7 @@
             document.getElementById('modal-driver-name').innerText = ride.driverName;
             document.getElementById('modal-price').innerText = `${ride.price} ₽`;
             document.getElementById('modal-datetime').innerText = `${ride.time} (${ride.date})`;
-            document.getElementById('modal-seats').innerText = `Свободно мест: ${ride.seats}`;
+            document.getElementById('modal-seats').innerText = `Мест всего: ${ride.seats}`;
 
             document.getElementById('modal-comment').innerText = ride.comment ? `"${ride.comment}"` : "Комментарий не указан.";
 
@@ -709,7 +774,7 @@
                 authBanner.classList.add('hidden');
                 contactActions.classList.remove('hidden');
 
-                if (isRideOwner(ride)) {
+                if (isRideOwner(ride) && isRideInFuture(ride)) {
                     ownerActions.classList.remove('hidden');
                 } else {
                     ownerActions.classList.add('hidden');
@@ -831,14 +896,22 @@
 
             closeEditRideModal();
             showToast('Поездка успешно обновлена!');
-            renderRides();
+            if (isFilterActive) {
+                filterRides();
+            } else {
+                renderRides();
+            }
             renderMyRides();
         }
 
         function deleteRide(rideId) {
             rides = rides.filter(r => r.id !== rideId);
             showToast('Поездка отменена и удалена.');
-            renderRides();
+            if (isFilterActive) {
+                filterRides();
+            } else {
+                renderRides();
+            }
             renderMyRides();
         }
 
@@ -910,6 +983,12 @@
                 return;
             }
 
+            const rideDateTime = new Date(`${date}T${time}`);
+            if (rideDateTime < new Date()) {
+                showToast('Выберите актуальную дату / время');
+                return;
+            }
+
             const stopInputs = document.querySelectorAll('.stop-input');
             const stops = Array.from(stopInputs).map(i => i.value.trim()).filter(v => v !== '');
 
@@ -934,8 +1013,14 @@
             document.getElementById('publish-form').reset();
             document.getElementById('stops-container').innerHTML = '';
             syncProfileUI();
+
+            // Set search input values to match published ride & perform filter automatically
+            document.getElementById('search-from').value = from;
+            document.getElementById('search-to').value = to;
+            document.getElementById('search-date').value = date;
+            
             switchTab('search');
-            renderRides();
+            filterRides();
         }
 
         function filterRides() {
@@ -943,36 +1028,33 @@
             const to = document.getElementById('search-to').value.trim().toLowerCase();
             const selectedDate = document.getElementById('search-date').value;
 
+            if (!from || !to || !selectedDate) {
+                showToast('Заполните все три поля: Откуда, Куда и Дату');
+                return;
+            }
+
+            if (selectedDate < today) {
+                showToast('Выберите актуальную дату / время');
+                return;
+            }
+
+            isFilterActive = true;
+
             const filtered = rides.filter(ride => {
-                // Проверка фильтрации по выбранной дате
-                if (selectedDate && ride.date !== selectedDate) {
+                if (ride.date !== selectedDate) {
                     return false;
                 }
 
                 const routeLower = ride.route.map(r => r.toLowerCase());
                 
-                let fromIndex = from ? routeLower.findIndex(r => r.includes(from)) : -1;
-                let toIndex = to ? routeLower.findIndex(r => r.includes(to)) : -1;
+                let fromIndex = routeLower.findIndex(r => r.includes(from));
+                let toIndex = routeLower.findIndex(r => r.includes(to));
 
-                if (from && to) {
-                    return fromIndex !== -1 && toIndex !== -1 && fromIndex < toIndex;
-                } else if (from) {
-                    return fromIndex !== -1;
-                } else if (to) {
-                    return toIndex !== -1;
-                }
-                return true;
+                return fromIndex !== -1 && toIndex !== -1 && fromIndex < toIndex;
             });
 
-            if (from || to || selectedDate) {
-                document.getElementById('filter-info').classList.remove('hidden');
-                let infoParts = [];
-                if (from || to) infoParts.push(`${from || '...'} ➔ ${to || '...'}`);
-                if (selectedDate) infoParts.push(`Дата: ${selectedDate}`);
-                document.getElementById('filter-text').innerText = `Фильтр: ${infoParts.join(' | ')}`;
-            } else {
-                document.getElementById('filter-info').classList.add('hidden');
-            }
+            document.getElementById('filter-info').classList.remove('hidden');
+            document.getElementById('filter-text').innerText = `Фильтр: ${from} ➔ ${to} | Дата: ${selectedDate}`;
 
             renderRides(filtered);
         }
@@ -982,7 +1064,8 @@
             document.getElementById('search-to').value = '';
             document.getElementById('search-date').value = today;
             document.getElementById('filter-info').classList.add('hidden');
-            renderRides(rides);
+            isFilterActive = false;
+            renderRides();
         }
 
         function switchTab(tabName) {
