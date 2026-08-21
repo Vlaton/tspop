@@ -70,6 +70,11 @@
 
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+        /* Pull-to-refresh spinner */
+        #pull-spinner {
+            transition: height 0.2s ease, opacity 0.2s ease;
+        }
     </style>
 </head>
 <body class="flex justify-center min-h-screen bg-slate-200">
@@ -209,9 +214,16 @@
 
             <!-- TAB 3: MY RIDES -->
             <section id="tab-my-rides" class="space-y-4 hidden">
+                <!-- Pull to Refresh Spinner Area -->
+                <div id="pull-spinner" class="h-0 opacity-0 overflow-hidden flex items-center justify-center text-indigo-600 text-xs gap-2 font-medium">
+                    <i class="fa-solid fa-arrows-rotate animate-spin"></i> Обновление моих поездок...
+                </div>
+
                 <div class="flex justify-between items-center">
                     <h2 class="text-base font-bold text-slate-800">Мои предложенные поездки</h2>
-                    <span class="text-xs text-slate-500 font-medium">Управление</span>
+                    <button onclick="fetchMyRidesFromSupabase()" class="text-xs text-indigo-600 font-medium flex items-center gap-1 hover:underline">
+                        <i class="fa-solid fa-rotate-right"></i> Обновить
+                    </button>
                 </div>
                 <div id="my-rides-list" class="space-y-3">
                     <!-- Populated by JS -->
@@ -287,9 +299,9 @@
                             <i class="fa-brands fa-vk text-sm"></i> Написать водителю ВКонтакте
                         </button>
                         
-                        <button id="btn-phone" onclick="actionPhone()" class="w-full bg-emerald-600 text-white py-2.5 rounded-xl font-medium text-xs hover:bg-emerald-700 transition shadow-sm flex items-center justify-center gap-2 hidden">
+                        <a id="btn-phone" href="#" class="w-full bg-emerald-600 text-white py-2.5 rounded-xl font-medium text-xs hover:bg-emerald-700 transition shadow-sm flex items-center justify-center gap-2 hidden">
                             <i class="fa-solid fa-phone text-xs"></i> Позвонить водителю
-                        </button>
+                        </a>
                     </div>
                 </div>
 
@@ -432,19 +444,12 @@
                     <div>
                         <label class="text-[11px] font-semibold text-slate-600 block mb-1">Телефон по умолчанию</label>
                         <input type="tel" id="edit-phone" value="" placeholder="+7 (900) 000-00-00" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
-                        <p class="text-[10px] text-slate-400 mt-1">Этот номер будет автоматически подставляться при публикации поездок.</p>
+                        <p class="text-[10px] text-slate-400 mt-1">Этот номер будет сохранен в облаке и автоматически подставляться при публикации поездок.</p>
                     </div>
 
                     <button onclick="saveProfile()" class="w-full vk-bg text-white py-2 rounded-xl font-medium text-xs hover:opacity-95 transition shadow-sm">
                         Сохранить изменения
                     </button>
-                </div>
-
-                <div class="bg-indigo-50 border border-indigo-100 p-3 rounded-2xl text-slate-700 text-[11px] leading-relaxed space-y-2">
-                    <div class="font-bold text-indigo-900 flex items-center gap-1.5">
-                        <i class="fa-solid fa-globe"></i> Для отдельного сайта:
-                    </div>
-                    <p class="text-slate-600">На независимом веб-сайте здесь будет доступна быстрая регистрация по коду из СМС или в 1 клик через VK ID.</p>
                 </div>
 
             </div>
@@ -495,13 +500,15 @@
         // Current User Profile State
         let isAuthenticated = false;
         let currentUser = {
+            id: null,
             name: "Пользователь",
             avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80",
-            phone: ""
+            phone: localStorage.getItem('ts_user_phone') || ""
         };
 
-        // Live rides array synced with Supabase DB
-        let rides = [];
+        // Targeted local ride stores
+        let searchResultsRides = [];
+        let myRidesList = [];
 
         async function initVkUserData() {
             if (typeof vkBridge !== 'undefined') {
@@ -509,8 +516,12 @@
                     const user = await vkBridge.send('VKWebAppGetUserInfo');
                     if (user && user.first_name) {
                         isAuthenticated = true;
+                        currentUser.id = String(user.id);
                         currentUser.name = `${user.first_name} ${user.last_name}`;
                         currentUser.avatar = user.photo_200 || user.photo_100 || currentUser.avatar;
+
+                        // Fetch persistent user phone from last ride in DB
+                        await fetchUserPhoneFromDB();
                         syncProfileUI();
                     }
                 } catch (e) {
@@ -519,21 +530,46 @@
             }
         }
 
-        async function fetchRidesFromSupabase() {
+        async function fetchUserPhoneFromDB() {
+            if (!currentUser.id) return;
+            try {
+                const { data, error } = await supabaseClient
+                    .from('rides')
+                    .select('phone')
+                    .eq('user_id', currentUser.id)
+                    .order('id', { ascending: false })
+                    .limit(1);
+
+                if (data && data.length > 0 && data[0].phone) {
+                    currentUser.phone = data[0].phone;
+                    localStorage.setItem('ts_user_phone', data[0].phone);
+                }
+            } catch (err) {
+                console.error('Error fetching phone from DB:', err);
+            }
+        }
+
+        async function fetchMyRidesFromSupabase() {
+            if (!isAuthenticated || !currentUser.id) {
+                renderMyRides();
+                return;
+            }
+
             try {
                 const { data, error } = await supabaseClient
                     .from('rides')
                     .select('*')
+                    .eq('user_id', currentUser.id)
                     .order('date', { ascending: true })
                     .order('time', { ascending: true });
 
                 if (error) {
-                    console.error('Supabase fetch error:', error);
+                    console.error('Supabase fetch my rides error:', error);
                     return;
                 }
 
                 if (data) {
-                    rides = data.map(r => ({
+                    myRidesList = data.map(r => ({
                         id: r.id,
                         driverName: r.driver_name,
                         driverAvatar: r.driver_avatar || currentUser.avatar,
@@ -547,13 +583,14 @@
                         userId: r.user_id
                     }));
                 }
+                renderMyRides();
             } catch (err) {
-                console.error('Network error during Supabase fetch:', err);
+                console.error('Network error during my rides fetch:', err);
             }
         }
 
         function isRideOwner(ride) {
-            return isAuthenticated && (ride.driverName === currentUser.name || ride.userId === currentUser.name);
+            return isAuthenticated && (ride.userId === currentUser.id || ride.driverName === currentUser.name);
         }
 
         function isRideInFuture(ride) {
@@ -617,13 +654,16 @@
                     const user = await vkBridge.send('VKWebAppGetUserInfo');
                     if (user && user.first_name) {
                         isAuthenticated = true;
+                        currentUser.id = String(user.id);
                         currentUser.name = `${user.first_name} ${user.last_name}`;
                         currentUser.avatar = user.photo_200 || user.photo_100 || currentUser.avatar;
+                        
+                        await fetchUserPhoneFromDB();
                         syncProfileUI();
                         closeLoginModal();
                         showToast(`Добро пожаловать, ${user.first_name}!`);
                         if (activeSelectedRide) openRideDetail(activeSelectedRide.id);
-                        renderMyRides();
+                        await fetchMyRidesFromSupabase();
                         return;
                     }
                 } catch (e) {
@@ -632,22 +672,24 @@
             }
 
             isAuthenticated = true;
+            currentUser.id = "demo_user_1";
             currentUser.name = "Иван Петров";
-            currentUser.phone = "+7 (900) 123-45-67";
+            const savedPhone = localStorage.getItem('ts_user_phone') || "+7 (900) 123-45-67";
+            currentUser.phone = savedPhone;
             syncProfileUI();
             closeLoginModal();
             showToast('Успешный вход в аккаунт!');
             if (activeSelectedRide) {
                 openRideDetail(activeSelectedRide.id);
             }
-            renderMyRides();
+            await fetchMyRidesFromSupabase();
         }
 
         function renderRides(itemsToRender = null) {
             const container = document.getElementById('rides-container');
             const feedHeader = document.getElementById('feed-header-box');
 
-            if (!isFilterActive && !itemsToRender) {
+            if (!isFilterActive) {
                 feedHeader.classList.add('hidden');
                 container.innerHTML = `
                     <div class="text-center py-8 px-4 bg-white rounded-2xl border border-slate-200/80 shadow-sm space-y-2">
@@ -662,8 +704,7 @@
                 return;
             }
 
-            const items = itemsToRender || rides;
-
+            const items = itemsToRender || searchResultsRides;
             const futureActiveItems = items.filter(r => isRideInFuture(r));
 
             const sortedItems = [...futureActiveItems].sort((a, b) => {
@@ -743,10 +784,8 @@
                 return;
             }
 
-            const myRides = rides.filter(r => isRideOwner(r));
-
-            const activeMyRides = myRides.filter(r => isRideInFuture(r)).sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
-            const pastMyRides = myRides.filter(r => isRideWithin30DaysPast(r)).sort((a, b) => `${b.date} ${b.time}`.localeCompare(`${a.date} ${a.time}`));
+            const activeMyRides = myRidesList.filter(r => isRideInFuture(r)).sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
+            const pastMyRides = myRidesList.filter(r => isRideWithin30DaysPast(r)).sort((a, b) => `${b.date} ${b.time}`.localeCompare(`${a.date} ${a.time}`));
 
             if (activeMyRides.length === 0 && pastMyRides.length === 0) {
                 container.innerHTML = `
@@ -828,7 +867,7 @@
         }
 
         function openRideDetail(rideId) {
-            const ride = rides.find(r => r.id === rideId);
+            const ride = searchResultsRides.find(r => r.id === rideId) || myRidesList.find(r => r.id === rideId);
             if (!ride) return;
 
             activeSelectedRide = ride;
@@ -863,10 +902,13 @@
                     ownerActions.classList.add('hidden');
                 }
 
-                if (ride.phone) {
+                if (ride.phone && ride.phone.trim() !== '') {
                     btnPhone.classList.remove('hidden');
+                    const cleanPhone = ride.phone.replace(/[^\d+]/g, '');
+                    btnPhone.href = `tel:${cleanPhone}`;
                 } else {
                     btnPhone.classList.add('hidden');
+                    btnPhone.href = '#';
                 }
             }
 
@@ -894,7 +936,7 @@
         }
 
         function openEditRideModal(rideId) {
-            const ride = rides.find(r => r.id === rideId);
+            const ride = myRidesList.find(r => r.id === rideId) || searchResultsRides.find(r => r.id === rideId);
             if (!ride) return;
 
             document.getElementById('edit-ride-id').value = ride.id;
@@ -983,16 +1025,19 @@
                     return;
                 }
 
-                await fetchRidesFromSupabase();
+                if (phone) {
+                    currentUser.phone = phone;
+                    localStorage.setItem('ts_user_phone', phone);
+                    syncProfileUI();
+                }
+
+                await fetchMyRidesFromSupabase();
                 closeEditRideModal();
                 showToast('Поездка успешно обновлена!');
                 
                 if (isFilterActive) {
                     filterRides();
-                } else {
-                    renderRides();
                 }
-                renderMyRides();
 
             } catch (err) {
                 console.error(err);
@@ -1013,15 +1058,12 @@
                     return;
                 }
 
-                await fetchRidesFromSupabase();
+                await fetchMyRidesFromSupabase();
                 showToast('Поездка отменена и удалена.');
 
                 if (isFilterActive) {
                     filterRides();
-                } else {
-                    renderRides();
                 }
-                renderMyRides();
 
             } catch (err) {
                 console.error(err);
@@ -1036,9 +1078,11 @@
             if (newName) currentUser.name = newName;
             currentUser.phone = newPhone;
 
+            localStorage.setItem('ts_user_phone', newPhone);
+
             syncProfileUI();
             closeProfileModal();
-            showToast('Профиль и номер телефона успешно сохранены!');
+            showToast('Профиль и номер телефона сохранены!');
         }
 
         function showToast(text) {
@@ -1054,12 +1098,16 @@
 
         function actionVK() {
             if (!activeSelectedRide) return;
-            showToast(`Открытие личных сообщений VK с ${activeSelectedRide.driverName}`);
-        }
+            const targetId = activeSelectedRide.userId;
+            const url = (targetId && !isNaN(targetId)) ? `https://vk.com/im?sel=${targetId}` : `https://vk.com`;
 
-        function actionPhone() {
-            if (!activeSelectedRide || !activeSelectedRide.phone) return;
-            showToast(`Вызов: ${activeSelectedRide.phone}`);
+            if (typeof vkBridge !== 'undefined') {
+                vkBridge.send('VKWebAppOpenURL', { url: url }).catch(() => {
+                    window.open(url, '_blank');
+                });
+            } else {
+                window.open(url, '_blank');
+            }
         }
 
         function addStopInput() {
@@ -1108,8 +1156,10 @@
 
             const route = [from, ...stops, to];
 
+            const finalPhone = phone || currentUser.phone;
+
             try {
-                const { data, error } = await supabaseClient
+                const { error } = await supabaseClient
                     .from('rides')
                     .insert([{
                         driver_name: currentUser.name,
@@ -1119,11 +1169,10 @@
                         time: time,
                         price: Number(price),
                         seats: seats,
-                        phone: phone || currentUser.phone,
+                        phone: finalPhone,
                         comment: comment,
-                        user_id: currentUser.name
-                    }])
-                    .select();
+                        user_id: currentUser.id || currentUser.name
+                    }]);
 
                 if (error) {
                     console.error('Supabase insert error:', error);
@@ -1131,19 +1180,22 @@
                     return;
                 }
 
-                await fetchRidesFromSupabase();
+                if (finalPhone) {
+                    currentUser.phone = finalPhone;
+                    localStorage.setItem('ts_user_phone', finalPhone);
+                }
+
                 showToast('Поездка успешно опубликована!');
                 
                 document.getElementById('publish-form').reset();
                 document.getElementById('stops-container').innerHTML = '';
                 syncProfileUI();
 
-                // Set search input values to match published ride & perform filter automatically
                 document.getElementById('search-from').value = from;
                 document.getElementById('search-to').value = to;
                 document.getElementById('search-date').value = date;
                 
-                switchTab('search');
+                await switchTab('search');
                 filterRides();
 
             } catch (err) {
@@ -1152,7 +1204,7 @@
             }
         }
 
-        function filterRides() {
+        async function filterRides() {
             const from = document.getElementById('search-from').value.trim().toLowerCase();
             const to = document.getElementById('search-to').value.trim().toLowerCase();
             const selectedDate = document.getElementById('search-date').value;
@@ -1163,29 +1215,57 @@
             }
 
             if (selectedDate < today) {
-                showToast('Выберите актуальную дату / время');
+                showToast('Выберите актуальную дату');
                 return;
             }
 
             isFilterActive = true;
 
-            const filtered = rides.filter(ride => {
-                if (ride.date !== selectedDate) {
-                    return false;
+            try {
+                // Targeted request to Supabase strictly for selected date
+                const { data, error } = await supabaseClient
+                    .from('rides')
+                    .select('*')
+                    .eq('date', selectedDate)
+                    .order('time', { ascending: true });
+
+                if (error) {
+                    console.error('Error fetching search rides:', error);
+                    showToast('Ошибка поиска');
+                    return;
                 }
 
-                const routeLower = ride.route.map(r => r.toLowerCase());
-                
-                let fromIndex = routeLower.findIndex(r => r.includes(from));
-                let toIndex = routeLower.findIndex(r => r.includes(to));
+                const rawList = data ? data.map(r => ({
+                    id: r.id,
+                    driverName: r.driver_name,
+                    driverAvatar: r.driver_avatar || currentUser.avatar,
+                    route: r.route || [],
+                    date: r.date,
+                    time: r.time,
+                    price: r.price,
+                    seats: r.seats,
+                    phone: r.phone,
+                    comment: r.comment,
+                    userId: r.user_id
+                })) : [];
 
-                return fromIndex !== -1 && toIndex !== -1 && fromIndex < toIndex;
-            });
+                // Strict 3-field route match
+                searchResultsRides = rawList.filter(ride => {
+                    const routeLower = ride.route.map(r => r.toLowerCase());
+                    let fromIndex = routeLower.findIndex(r => r.includes(from));
+                    let toIndex = routeLower.findIndex(r => r.includes(to));
+                    return fromIndex !== -1 && toIndex !== -1 && fromIndex < toIndex;
+                });
 
-            document.getElementById('filter-info').classList.remove('hidden');
-            document.getElementById('filter-text').innerText = `Фильтр: ${from} ➔ ${to} | Дата: ${selectedDate}`;
+                document.getElementById('filter-info').classList.remove('hidden');
+                document.getElementById('filter-text').innerText = `Фильтр: ${from} ➔ ${to} | Дата: ${selectedDate}`;
 
-            renderRides(filtered);
+                renderRides(searchResultsRides);
+
+            } catch (err) {
+                console.error(err);
+                showToast('Ошибка сети при поиске');
+            }
         }
 
         function resetFilter() {
@@ -1194,10 +1274,11 @@
             document.getElementById('search-date').value = today;
             document.getElementById('filter-info').classList.add('hidden');
             isFilterActive = false;
+            searchResultsRides = [];
             renderRides();
         }
 
-        function switchTab(tabName) {
+        async function switchTab(tabName) {
             ['search', 'publish', 'my-rides'].forEach(tab => {
                 document.getElementById(`tab-${tab}`).classList.add('hidden');
                 document.getElementById(`nav-${tab}`).className = 'flex flex-col items-center gap-1 inactive-tab w-1/3';
@@ -1207,17 +1288,57 @@
             document.getElementById(`nav-${tabName}`).className = 'flex flex-col items-center gap-1 active-tab w-1/3';
 
             if (tabName === 'my-rides') {
-                renderMyRides();
+                await fetchMyRidesFromSupabase();
             } else if (tabName === 'publish') {
                 document.getElementById('pub-phone').value = currentUser.phone;
+            } else if (tabName === 'search') {
+                if (isFilterActive) {
+                    filterRides();
+                } else {
+                    renderRides();
+                }
             }
         }
+
+        // Pull-to-refresh mechanism for "Мои поездки"
+        let touchStartY = 0;
+        const mainContainer = document.querySelector('main');
+        const pullSpinner = document.getElementById('pull-spinner');
+
+        mainContainer.addEventListener('touchstart', (e) => {
+            if (document.getElementById('tab-my-rides').classList.contains('hidden')) return;
+            if (mainContainer.scrollTop === 0) {
+                touchStartY = e.touches[0].clientY;
+            } else {
+                touchStartY = 0;
+            }
+        }, { passive: true });
+
+        mainContainer.addEventListener('touchmove', (e) => {
+            if (!touchStartY || document.getElementById('tab-my-rides').classList.contains('hidden')) return;
+            const currentY = e.touches[0].clientY;
+            const diff = currentY - touchStartY;
+
+            if (diff > 40 && mainContainer.scrollTop === 0) {
+                pullSpinner.style.height = '32px';
+                pullSpinner.style.opacity = '1';
+            }
+        }, { passive: true });
+
+        mainContainer.addEventListener('touchend', async (e) => {
+            if (pullSpinner.style.opacity === '1') {
+                await fetchMyRidesFromSupabase();
+                showToast('Список поездок обновлен');
+                pullSpinner.style.height = '0px';
+                pullSpinner.style.opacity = '0';
+            }
+            touchStartY = 0;
+        });
 
         // Initial Load
         async function initApp() {
             syncProfileUI();
             await initVkUserData();
-            await fetchRidesFromSupabase();
             renderRides();
         }
 
