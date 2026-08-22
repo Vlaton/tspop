@@ -88,7 +88,7 @@
                 <h1 class="text-lg font-bold tracking-wide">Туда-Сюда</h1>
             </div>
             
-            <!-- Auth Status Button / Profile Cabinet (Shifted left so native VK buttons don't overlap) -->
+            <!-- Auth Status Button / Profile Cabinet (Offset to avoid VK Mini App native top-right overlay) -->
             <button id="btn-header-profile" onclick="handleHeaderProfileClick()" class="flex items-center gap-2 bg-white/15 hover:bg-white/25 active:scale-95 transition pl-2.5 pr-4 py-1.5 rounded-full mr-16">
                 <img id="header-avatar" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80" alt="Avatar" class="w-6 h-6 rounded-full object-cover border border-white/40">
                 <span id="header-name" class="text-xs font-medium max-w-[100px] truncate">Войти</span>
@@ -444,7 +444,7 @@
                     <div>
                         <label class="text-[11px] font-semibold text-slate-600 block mb-1">Телефон по умолчанию</label>
                         <input type="tel" id="edit-phone" value="" placeholder="+7 (900) 000-00-00" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
-                        <p class="text-[10px] text-slate-400 mt-1">Этот номер будет сохранен в облаке и автоматически подставляться при публикации поездок.</p>
+                        <p class="text-[10px] text-slate-400 mt-1">При сохранении новые данные автоматически обновятся во всех ваших опубликованных поездках.</p>
                     </div>
 
                     <button onclick="saveProfile()" class="w-full vk-bg text-white py-2 rounded-xl font-medium text-xs hover:opacity-95 transition shadow-sm">
@@ -1077,18 +1077,59 @@
             }
         }
 
-        function saveProfile() {
+        async function saveProfile() {
             const newName = document.getElementById('edit-name').value.trim();
             const newPhone = document.getElementById('edit-phone').value.trim();
 
-            if (newName) currentUser.name = newName;
+            if (!newName) {
+                showToast('Имя не может быть пустым');
+                return;
+            }
+
+            const oldName = currentUser.name;
+            currentUser.name = newName;
             currentUser.phone = newPhone;
 
             localStorage.setItem('ts_user_phone', newPhone);
 
+            // Automatically update driver_name and phone across ALL rides published by this user in Supabase
+            if (isAuthenticated) {
+                try {
+                    let updatePayload = {
+                        driver_name: newName,
+                        phone: newPhone
+                    };
+
+                    let query = supabaseClient.from('rides').update(updatePayload);
+                    if (currentUser.id) {
+                        query = query.or(`user_id.eq.${currentUser.id},driver_name.eq.${oldName}`);
+                    } else {
+                        query = query.eq('driver_name', oldName);
+                    }
+
+                    const { error } = await query;
+
+                    if (error) {
+                        console.error('Supabase profile update error:', error);
+                        showToast('Ошибка при синхронизации поездок в базе');
+                    } else {
+                        showToast('Профиль и все ваши опубликованные поездки обновлены!');
+                    }
+
+                    await fetchMyRidesFromSupabase();
+                    if (isFilterActive) {
+                        filterRides();
+                    }
+                } catch (err) {
+                    console.error('Error updating rides for profile:', err);
+                    showToast('Ошибка соединения при сохранении профиля');
+                }
+            } else {
+                showToast('Профиль сохранен!');
+            }
+
             syncProfileUI();
             closeProfileModal();
-            showToast('Профиль и номер телефона сохранены!');
         }
 
         function showToast(text) {
@@ -1106,14 +1147,24 @@
             if (!activeSelectedRide) return;
             const targetId = activeSelectedRide.userId;
             
-            // Generate VK Messenger URL (if numeric ID, directly open chat window; otherwise open VK)
-            let url = 'https://vk.com/im';
-            if (targetId && !isNaN(targetId)) {
-                url = `https://vk.com/im?sel=${targetId}`;
+            if (!targetId) {
+                showToast('Не удалось определить профиль водителя ВКонтакте');
+                return;
             }
 
-            if (typeof vkBridge !== 'undefined') {
-                vkBridge.send('VKWebAppOpenURL', { url: url }).catch(() => {
+            // Clean numeric VK ID if present
+            const numericId = String(targetId).replace(/[^\d]/g, '');
+            
+            let url = 'https://vk.com/im';
+            if (numericId && numericId.length > 0) {
+                url = `https://vk.com/im?sel=${numericId}`;
+            } else if (typeof targetId === 'string' && targetId.startsWith('http')) {
+                url = targetId;
+            }
+
+            if (typeof vkBridge !== 'undefined' && vkBridge.send) {
+                vkBridge.send('VKWebAppOpenURL', { url: url }).catch((err) => {
+                    console.log('VK Bridge open URL fallback:', err);
                     window.open(url, '_blank');
                 });
             } else {
