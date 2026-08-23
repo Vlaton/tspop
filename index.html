@@ -520,15 +520,19 @@
                     <button onclick="saveProfile()" class="w-full vk-bg text-white py-2 rounded-xl font-medium text-xs hover:opacity-95 transition shadow-sm">
                         Сохранить изменения
                     </button>
+
+                    <button onclick="requestVkNotifications()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-2 rounded-xl font-medium text-xs transition flex items-center justify-center gap-2 border border-slate-200">
+                        <i class="fa-regular fa-bell text-indigo-600"></i> Разрешить Push-уведомления VK
+                    </button>
                 </div>
 
             </div>
         </div>
 
         <!-- Custom Toast Notification -->
-        <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-4 py-2.5 rounded-xl shadow-xl z-50 hidden opacity-0 transition-opacity duration-300 flex items-center gap-2">
+        <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-4 py-2.5 rounded-xl shadow-xl z-50 hidden opacity-0 transition-opacity duration-300 flex items-center gap-2 max-w-[90%]">
             <i class="fa-solid fa-circle-info text-indigo-400"></i>
-            <span id="toast-text">Уведомление</span>
+            <span id="toast-text" class="truncate">Уведомление</span>
         </div>
 
         <!-- Bottom Navigation Bar (4 items: Поиск, Создать, Чаты, Мои поездки) -->
@@ -541,8 +545,11 @@
                 <i class="fa-solid fa-plus-circle text-lg"></i>
                 <span class="text-[11px] font-medium">Создать</span>
             </button>
-            <button onclick="switchTab('chats')" id="nav-chats" class="flex flex-col items-center gap-1 inactive-tab w-1/4">
-                <i class="fa-regular fa-comments text-lg"></i>
+            <button onclick="switchTab('chats')" id="nav-chats" class="flex flex-col items-center gap-1 inactive-tab w-1/4 relative">
+                <div class="relative">
+                    <i class="fa-regular fa-comments text-lg"></i>
+                    <span id="chats-badge" class="absolute -top-1.5 -right-3 bg-rose-500 text-white text-[9px] font-bold rounded-full h-4 min-w-[16px] px-1 flex items-center justify-center hidden shadow-md animate-pulse">0</span>
+                </div>
                 <span class="text-[11px] font-medium">Чаты</span>
             </button>
             <button onclick="switchTab('my-rides')" id="nav-my-rides" class="flex flex-col items-center gap-1 inactive-tab w-1/4">
@@ -571,6 +578,9 @@
         let activeSelectedRide = null;
         let isFilterActive = false;
 
+        // Unread Badge State
+        let unreadMessagesCount = 0;
+
         // Current User Profile State
         let isAuthenticated = false;
         let currentUser = {
@@ -588,6 +598,92 @@
         let myRidesList = [];
         let userConversations = [];
 
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        function triggerVkHaptic() {
+            if (typeof vkBridge !== 'undefined') {
+                vkBridge.send('VKWebAppTapticNotificationOccurred', { type: 'custom' }).catch(() => {});
+            }
+        }
+
+        function updateUnreadBadgeUI() {
+            const badge = document.getElementById('chats-badge');
+            if (!badge) return;
+            if (unreadMessagesCount > 0) {
+                badge.innerText = unreadMessagesCount > 99 ? '99+' : unreadMessagesCount;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        function incrementUnreadBadge() {
+            unreadMessagesCount++;
+            updateUnreadBadgeUI();
+        }
+
+        function clearUnreadBadge() {
+            unreadMessagesCount = 0;
+            updateUnreadBadgeUI();
+        }
+
+        function requestVkNotifications() {
+            if (typeof vkBridge !== 'undefined') {
+                vkBridge.send('VKWebAppAllowNotifications')
+                    .then(data => {
+                        if (data.result) {
+                            showToast('VK Push-уведомления включены!');
+                        }
+                    })
+                    .catch(err => {
+                        console.log('Push notifications rejected:', err);
+                    });
+            } else {
+                showToast('Разрешите уведомления в браузере');
+            }
+        }
+
+        function initRealtimeMessages() {
+            if (window.messagesChannel) {
+                supabaseClient.removeChannel(window.messagesChannel);
+            }
+
+            window.messagesChannel = supabaseClient
+                .channel('realtime-messages-stream')
+                .on('postgres_changes', {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'messages'
+                }, payload => {
+                    const newMsg = payload.new;
+                    if (!newMsg || !isAuthenticated) return;
+
+                    const myId = currentUser.id || currentUser.name;
+                    const isForMe = (newMsg.recipient_id === myId || newMsg.recipient_name === currentUser.name || newMsg.recipient_id === currentUser.name);
+
+                    if (isForMe) {
+                        const isChatModalOpen = document.getElementById('chat-modal').classList.contains('open');
+                        
+                        if (isChatModalOpen && activeChat && String(activeChat.rideId) === String(newMsg.ride_id)) {
+                            appendChatMessage(newMsg);
+                            triggerVkHaptic();
+                        } else {
+                            incrementUnreadBadge();
+                            showToast(`💬 ${newMsg.sender_name}: "${newMsg.text.length > 25 ? newMsg.text.substring(0, 25) + '...' : newMsg.text}"`);
+                            triggerVkHaptic();
+
+                            if (!document.getElementById('tab-chats').classList.contains('hidden')) {
+                                fetchUserConversations();
+                            }
+                        }
+                    }
+                })
+                .subscribe();
+        }
+
         async function initVkUserData() {
             if (typeof vkBridge !== 'undefined') {
                 try {
@@ -598,12 +694,39 @@
                         currentUser.name = `${user.first_name} ${user.last_name}`;
                         currentUser.avatar = user.photo_200 || user.photo_100 || currentUser.avatar;
 
+                        // Передача параметров запуска VK для валидации (Шаг 2)
+                        const launchParams = window.location.search;
+                        if (launchParams && launchParams.includes('vk_user_id')) {
+                            verifyVkLaunchParamsWithServer(launchParams);
+                        }
+
                         await fetchUserPhoneFromDB();
                         syncProfileUI();
+                        initRealtimeMessages();
                     }
                 } catch (e) {
                     console.log('Outside VK environment or permission denied:', e);
                 }
+            }
+        }
+
+        async function verifyVkLaunchParamsWithServer(launchParams) {
+            try {
+                // Вызов Supabase Edge Function для валидации цифровой подписи VK
+                const { data, error } = await supabaseClient.functions.invoke('verify-vk', {
+                    body: { launchParams: launchParams }
+                });
+
+                if (error) {
+                    console.warn('VK Signature validation edge function not active or returned error:', error);
+                    return;
+                }
+
+                if (data && data.valid) {
+                    console.log('Подпись VK успешно подтверждена сервером для пользователя:', data.vk_user_id);
+                }
+            } catch (err) {
+                console.log('Validation request skipped or failed:', err);
             }
         }
 
@@ -742,6 +865,7 @@
                         
                         await fetchUserPhoneFromDB();
                         syncProfileUI();
+                        initRealtimeMessages();
                         closeLoginModal();
                         showToast(`Добро пожаловать, ${user.first_name}!`);
                         if (activeSelectedRide) openRideDetail(activeSelectedRide.id);
@@ -759,6 +883,7 @@
             const savedPhone = localStorage.getItem('ts_user_phone') || "+7 (900) 123-45-67";
             currentUser.phone = savedPhone;
             syncProfileUI();
+            initRealtimeMessages();
             closeLoginModal();
             showToast('Успешный вход в аккаунт!');
             if (activeSelectedRide) {
@@ -816,10 +941,10 @@
                     <div onclick="openRideDetail(${ride.id})" class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm space-y-2 hover:border-indigo-300 active:scale-[0.99] transition cursor-pointer">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-2.5">
-                                <img src="${ride.driverAvatar}" alt="${ride.driverName}" class="w-9 h-9 rounded-full object-cover border border-slate-100">
+                                <img src="${ride.driverAvatar}" alt="${escapeHtml(ride.driverName)}" class="w-9 h-9 rounded-full object-cover border border-slate-100">
                                 <div>
                                     <div class="flex items-center gap-1.5">
-                                        <h4 class="text-xs font-bold text-slate-800">${ride.driverName}</h4>
+                                        <h4 class="text-xs font-bold text-slate-800">${escapeHtml(ride.driverName)}</h4>
                                         ${isOwner ? '<span class="text-[9px] bg-indigo-100 text-indigo-700 px-1.5 py-0.2 rounded font-bold">Вы</span>' : ''}
                                     </div>
                                     <span class="text-[10px] text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded font-medium">Водитель</span>
@@ -839,7 +964,7 @@
                                 <span class="text-slate-500 font-normal text-[11px]">${ride.date}</span>
                             </div>
                             <div class="font-medium text-slate-800 mt-0.5 truncate">
-                                ${routeFormatted}
+                                ${escapeHtml(routeFormatted)}
                             </div>
                         </div>
                     </div>
@@ -895,7 +1020,7 @@
                             </div>
 
                             <div class="text-xs font-semibold text-slate-800 bg-slate-50 p-2 rounded-xl border border-slate-100">
-                                ${routeFormatted}
+                                ${escapeHtml(routeFormatted)}
                             </div>
 
                             <div class="flex items-center justify-between pt-1 border-t border-slate-100">
@@ -938,7 +1063,7 @@
                             </div>
 
                             <div class="text-xs font-medium text-slate-600 bg-slate-50 p-2 rounded-xl border border-slate-100">
-                                ${routeFormatted}
+                                ${escapeHtml(routeFormatted)}
                             </div>
                         </div>
                     `;
@@ -963,7 +1088,7 @@
             document.getElementById('modal-comment').innerText = ride.comment ? `"${ride.comment}"` : "Комментарий не указан.";
 
             document.getElementById('modal-route').innerHTML = ride.route.map((p, idx) => 
-                `<div class="flex items-center gap-2"><span class="w-4 h-4 rounded-full bg-indigo-100 text-indigo-600 text-[10px] font-bold flex items-center justify-center">${idx + 1}</span> <span>${p}</span></div>`
+                `<div class="flex items-center gap-2"><span class="w-4 h-4 rounded-full bg-indigo-100 text-indigo-600 text-[10px] font-bold flex items-center justify-center">${idx + 1}</span> <span>${escapeHtml(p)}</span></div>`
             ).join('');
 
             const authBanner = document.getElementById('auth-required-banner');
@@ -1061,7 +1186,7 @@
             const stopDiv = document.createElement('div');
             stopDiv.className = 'flex items-center gap-1';
             stopDiv.innerHTML = `
-                <input type="text" value="${value}" placeholder="Промежуточная остановка" class="edit-stop-input w-full p-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
+                <input type="text" value="${escapeHtml(value)}" placeholder="Промежуточная остановка" class="edit-stop-input w-full p-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
                 <button type="button" onclick="this.parentElement.remove()" class="text-rose-400 hover:text-rose-600 p-1.5">
                     <i class="fa-solid fa-trash-can"></i>
                 </button>
@@ -1215,9 +1340,8 @@
             setTimeout(() => {
                 toast.classList.add('opacity-0');
                 setTimeout(() => toast.classList.add('hidden'), 300);
-            }, 3000);
+            }, 3500);
         }
-
 
         function openChatFromDetail() {
             if (!isAuthenticated) {
@@ -1266,6 +1390,38 @@
             closeChatModal();
         }
 
+        function appendChatMessage(msg) {
+            const container = document.getElementById('chat-messages-container');
+            if (!container) return;
+
+            if (container.querySelector('.fa-spinner') || container.innerText.includes('Сообщений пока нет')) {
+                container.innerHTML = '';
+            }
+
+            const isMyMsg = (msg.sender_id === currentUser.id || msg.sender_name === currentUser.name);
+            const msgTime = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            const msgHtml = isMyMsg ? `
+                <div class="flex justify-end">
+                    <div class="bg-indigo-600 text-white p-2.5 rounded-2xl rounded-tr-xs max-w-[80%] space-y-1 shadow-sm">
+                        <p class="text-xs leading-relaxed">${escapeHtml(msg.text)}</p>
+                        <div class="text-[9px] text-indigo-200 text-right font-medium">${msgTime}</div>
+                    </div>
+                </div>
+            ` : `
+                <div class="flex justify-start">
+                    <div class="bg-slate-100 text-slate-800 p-2.5 rounded-2xl rounded-tl-xs max-w-[80%] space-y-1 border border-slate-200/60 shadow-sm">
+                        <div class="text-[10px] font-bold text-indigo-600">${escapeHtml(msg.sender_name)}</div>
+                        <p class="text-xs leading-relaxed">${escapeHtml(msg.text)}</p>
+                        <div class="text-[9px] text-slate-400 text-right">${msgTime}</div>
+                    </div>
+                </div>
+            `;
+
+            container.insertAdjacentHTML('beforeend', msgHtml);
+            container.scrollTop = container.scrollHeight;
+        }
+
         async function fetchChatMessages() {
             if (!activeChat || !isAuthenticated) return;
 
@@ -1310,7 +1466,7 @@
                         return `
                             <div class="flex justify-end">
                                 <div class="bg-indigo-600 text-white p-2.5 rounded-2xl rounded-tr-xs max-w-[80%] space-y-1 shadow-sm">
-                                    <p class="text-xs leading-relaxed">${msg.text}</p>
+                                    <p class="text-xs leading-relaxed">${escapeHtml(msg.text)}</p>
                                     <div class="text-[9px] text-indigo-200 text-right font-medium">${msgTime}</div>
                                 </div>
                             </div>
@@ -1319,8 +1475,8 @@
                         return `
                             <div class="flex justify-start">
                                 <div class="bg-slate-100 text-slate-800 p-2.5 rounded-2xl rounded-tl-xs max-w-[80%] space-y-1 border border-slate-200/60 shadow-sm">
-                                    <div class="text-[10px] font-bold text-indigo-600">${msg.sender_name}</div>
-                                    <p class="text-xs leading-relaxed">${msg.text}</p>
+                                    <div class="text-[10px] font-bold text-indigo-600">${escapeHtml(msg.sender_name)}</div>
+                                    <p class="text-xs leading-relaxed">${escapeHtml(msg.text)}</p>
                                     <div class="text-[9px] text-slate-400 text-right">${msgTime}</div>
                                 </div>
                             </div>
@@ -1362,11 +1518,9 @@
                     return;
                 }
 
-                await fetchChatMessages();
-
             } catch (err) {
                 console.error(err);
-                showToast(' Ошибка соединения');
+                showToast('Ошибка соединения');
             }
         }
 
@@ -1414,13 +1568,42 @@
                     return;
                 }
 
+                // Extract unique ride IDs to fetch fresh details from rides table
+                const rideIds = [...new Set(data.map(m => m.ride_id))];
+                const ridesMap = new Map();
+
+                if (rideIds.length > 0) {
+                    const { data: ridesData } = await supabaseClient
+                        .from('rides')
+                        .select('id, driver_name, driver_avatar, route, user_id')
+                        .in('id', rideIds);
+
+                    if (ridesData) {
+                        ridesData.forEach(r => ridesMap.set(r.id, r));
+                    }
+                }
+
                 // Group messages by ride_id & other party to identify conversations
                 const convMap = new Map();
 
                 data.forEach(msg => {
                     const isMySender = (msg.sender_id === currentUser.id || msg.sender_name === currentUser.name);
-                    const otherPartyName = isMySender ? msg.recipient_name : msg.sender_name;
-                    const otherPartyId = isMySender ? msg.recipient_id : msg.sender_id;
+                    const ride = ridesMap.get(msg.ride_id);
+                    const isDriver = ride ? (ride.user_id === currentUser.id || ride.driver_name === currentUser.name) : false;
+
+                    let otherPartyName = isMySender ? msg.recipient_name : msg.sender_name;
+                    let otherPartyAvatar = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80";
+
+                    if (ride) {
+                        if (!isDriver) {
+                            otherPartyName = ride.driver_name || otherPartyName;
+                            otherPartyAvatar = ride.driver_avatar || otherPartyAvatar;
+                        }
+                    }
+
+                    const routeText = (ride && ride.route && ride.route.length > 0)
+                        ? ride.route.join(' ➔ ')
+                        : `Поездка №${msg.ride_id}`;
 
                     const convKey = `${msg.ride_id}_${otherPartyName}`;
 
@@ -1428,7 +1611,9 @@
                         convMap.set(convKey, {
                             rideId: msg.ride_id,
                             otherPartyName: otherPartyName,
-                            otherPartyId: otherPartyId,
+                            otherPartyId: isMySender ? msg.recipient_id : msg.sender_id,
+                            otherPartyAvatar: otherPartyAvatar,
+                            routeText: routeText,
                             lastMessage: msg.text,
                             lastTime: msg.created_at,
                             isMyLast: isMySender
@@ -1436,22 +1621,20 @@
                     }
                 });
 
-                const conversations = Array.from(convMap.values()).sort((a, b) => 
+                userConversations = Array.from(convMap.values()).sort((a, b) => 
                     new Date(b.lastTime) - new Date(a.lastTime)
                 );
 
-                container.innerHTML = conversations.map(conv => {
+                container.innerHTML = userConversations.map((conv, idx) => {
                     const formattedTime = new Date(conv.lastTime).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
                     return `
-                        <div onclick="openExistingChat(${conv.rideId}, '${conv.otherPartyName}', '${conv.otherPartyId}')" class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-3 hover:border-indigo-200 active:scale-[0.99] transition cursor-pointer">
+                        <div onclick="openExistingChatByIndex(${idx})" class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-3 hover:border-indigo-200 active:scale-[0.99] transition cursor-pointer">
                             <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 vk-bg text-white font-bold rounded-full flex items-center justify-center text-sm shadow-sm">
-                                    ${conv.otherPartyName.charAt(0)}
-                                </div>
+                                <img src="${conv.otherPartyAvatar}" alt="${escapeHtml(conv.otherPartyName)}" class="w-10 h-10 rounded-full object-cover border border-slate-100 shadow-sm" onerror="this.src='https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80'">
                                 <div class="space-y-0.5 max-w-[180px]">
-                                    <h4 class="font-bold text-slate-800 text-xs truncate">${conv.otherPartyName}</h4>
+                                    <h4 class="font-bold text-slate-800 text-xs truncate">${escapeHtml(conv.otherPartyName)}</h4>
                                     <p class="text-[11px] text-slate-500 truncate font-medium">
-                                        ${conv.isMyLast ? '<span class="text-indigo-600 font-semibold">Вы: </span>' : ''}${conv.lastMessage}
+                                        ${conv.isMyLast ? '<span class="text-indigo-600 font-semibold">Вы: </span>' : ''}${escapeHtml(conv.lastMessage)}
                                     </p>
                                 </div>
                             </div>
@@ -1467,13 +1650,16 @@
             }
         }
 
-        function openExistingChat(rideId, recipientName, recipientId) {
+        function openExistingChatByIndex(index) {
+            const conv = userConversations[index];
+            if (!conv) return;
+
             activeChat = {
-                rideId: rideId,
-                recipientId: recipientId,
-                recipientName: recipientName,
-                recipientAvatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80",
-                routeText: `Поездка №${rideId}`
+                rideId: conv.rideId,
+                recipientId: conv.otherPartyId,
+                recipientName: conv.otherPartyName,
+                recipientAvatar: conv.otherPartyAvatar,
+                routeText: conv.routeText
             };
             openChatModal();
         }
@@ -1647,15 +1833,16 @@
         async function switchTab(tabName) {
             ['search', 'publish', 'chats', 'my-rides'].forEach(tab => {
                 document.getElementById(`tab-${tab}`).classList.add('hidden');
-                document.getElementById(`nav-${tab}`).className = 'flex flex-col items-center gap-1 inactive-tab w-1/4';
+                document.getElementById(`nav-${tab}`).className = 'flex flex-col items-center gap-1 inactive-tab w-1/4 relative';
             });
 
             document.getElementById(`tab-${tabName}`).classList.remove('hidden');
-            document.getElementById(`nav-${tabName}`).className = 'flex flex-col items-center gap-1 active-tab w-1/4';
+            document.getElementById(`nav-${tabName}`).className = 'flex flex-col items-center gap-1 active-tab w-1/4 relative';
 
             if (tabName === 'my-rides') {
                 await fetchMyRidesFromSupabase();
             } else if (tabName === 'chats') {
+                clearUnreadBadge();
                 await fetchUserConversations();
             } else if (tabName === 'publish') {
                 document.getElementById('pub-phone').value = currentUser.phone;
