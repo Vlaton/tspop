@@ -661,8 +661,18 @@
                     const newMsg = payload.new;
                     if (!newMsg || !isAuthenticated) return;
 
-                    const myId = currentUser.id || currentUser.name;
-                    const isForMe = (newMsg.recipient_id === myId || newMsg.recipient_name === currentUser.name || newMsg.recipient_id === currentUser.name);
+                    const myId = String(currentUser.id || currentUser.name);
+                    const senderId = String(newMsg.sender_id || '');
+                    const senderName = String(newMsg.sender_name || '');
+                    const recipientId = String(newMsg.recipient_id || '');
+                    const recipientName = String(newMsg.recipient_name || '');
+
+                    // Игнорируем входящее событие, если его отправили мы сами
+                    if (senderId === myId || senderName === currentUser.name) {
+                        return;
+                    }
+
+                    const isForMe = (recipientId === myId || recipientName === currentUser.name || recipientId === currentUser.name);
 
                     if (isForMe) {
                         const isChatModalOpen = document.getElementById('chat-modal').classList.contains('open');
@@ -681,7 +691,9 @@
                         }
                     }
                 })
-                .subscribe();
+                .subscribe((status) => {
+                    console.log('Realtime subscription status:', status);
+                });
         }
 
         async function initVkUserData() {
@@ -694,7 +706,6 @@
                         currentUser.name = `${user.first_name} ${user.last_name}`;
                         currentUser.avatar = user.photo_200 || user.photo_100 || currentUser.avatar;
 
-                        // Передача параметров запуска VK для валидации (Шаг 2)
                         const launchParams = window.location.search;
                         if (launchParams && launchParams.includes('vk_user_id')) {
                             verifyVkLaunchParamsWithServer(launchParams);
@@ -712,7 +723,6 @@
 
         async function verifyVkLaunchParamsWithServer(launchParams) {
             try {
-                // Вызов Supabase Edge Function для валидации цифровой подписи VK
                 const { data, error } = await supabaseClient.functions.invoke('verify-vk', {
                     body: { launchParams: launchParams }
                 });
@@ -1398,8 +1408,8 @@
                 container.innerHTML = '';
             }
 
-            const isMyMsg = (msg.sender_id === currentUser.id || msg.sender_name === currentUser.name);
-            const msgTime = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const isMyMsg = (String(msg.sender_id) === String(currentUser.id) || msg.sender_name === currentUser.name);
+            const msgTime = new Date(msg.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
             const msgHtml = isMyMsg ? `
                 <div class="flex justify-end">
@@ -1459,7 +1469,7 @@
                 }
 
                 container.innerHTML = data.map(msg => {
-                    const isMyMsg = (msg.sender_id === currentUser.id || msg.sender_name === currentUser.name);
+                    const isMyMsg = (String(msg.sender_id) === String(currentUser.id) || msg.sender_name === currentUser.name);
                     const msgTime = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
                     if (isMyMsg) {
@@ -1499,18 +1509,22 @@
 
             input.value = '';
 
+            const newMsg = {
+                ride_id: activeChat.rideId,
+                sender_id: currentUser.id || currentUser.name,
+                sender_name: currentUser.name,
+                recipient_id: activeChat.recipientId,
+                recipient_name: activeChat.recipientName,
+                text: text,
+                created_at: new Date().toISOString()
+            };
+
+            appendChatMessage(newMsg);
+
             try {
                 const { error } = await supabaseClient
                     .from('messages')
-                    .insert([{
-                        ride_id: activeChat.rideId,
-                        sender_id: currentUser.id || currentUser.name,
-                        sender_name: currentUser.name,
-                        recipient_id: activeChat.recipientId,
-                        recipient_name: activeChat.recipientName,
-                        text: text,
-                        created_at: new Date().toISOString()
-                    }]);
+                    .insert([newMsg]);
 
                 if (error) {
                     console.error('Supabase send message error:', error);
@@ -1568,7 +1582,7 @@
                     return;
                 }
 
-                // Extract unique ride IDs to fetch fresh details from rides table
+                // Извлекаем уникальные ID поездок
                 const rideIds = [...new Set(data.map(m => m.ride_id))];
                 const ridesMap = new Map();
 
@@ -1583,13 +1597,13 @@
                     }
                 }
 
-                // Group messages by ride_id & other party to identify conversations
+                // Группируем сообщения по поездке и собеседнику
                 const convMap = new Map();
 
                 data.forEach(msg => {
-                    const isMySender = (msg.sender_id === currentUser.id || msg.sender_name === currentUser.name);
+                    const isMySender = (String(msg.sender_id) === String(currentUser.id) || msg.sender_name === currentUser.name);
                     const ride = ridesMap.get(msg.ride_id);
-                    const isDriver = ride ? (ride.user_id === currentUser.id || ride.driver_name === currentUser.name) : false;
+                    const isDriver = ride ? (String(ride.user_id) === String(currentUser.id) || ride.driver_name === currentUser.name) : false;
 
                     let otherPartyName = isMySender ? msg.recipient_name : msg.sender_name;
                     let otherPartyAvatar = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80";
