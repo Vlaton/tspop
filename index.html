@@ -20,6 +20,7 @@
         }
         .vk-bg { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); }
         .vk-text { color: #6366f1; }
+        .tg-bg { background: linear-gradient(135deg, #24A1DE 0%, #1D83B7 100%); }
         .active-tab { color: #6366f1; border-top: 2px solid #6366f1; }
         .inactive-tab { color: #818c99; }
         
@@ -103,13 +104,23 @@
         
         <!-- Header Bar -->
         <header class="vk-bg text-white p-3.5 sticky top-0 z-20 shadow-md flex items-center justify-between">
-            <div class="flex items-center gap-2">
-                <i class="fa-solid fa-arrows-left-right text-lg"></i>
-                <h1 class="text-lg font-bold tracking-wide">Туда-Сюда</h1>
+            <div class="flex items-center gap-2.5">
+                <!-- Custom App Logo Emblem SVG (Vertically Centered) -->
+                <svg class="w-7 h-7 text-white fill-current shrink-0 self-center" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Left Location Pin -->
+                    <path d="M 20,12 C 11,12 4,19 4,28 C 4,42 20,68 20,68 C 20,68 36,42 36,28 C 36,19 29,12 20,12 Z M 20,35 C 16.1,35 13,31.9 13,28 C 13,24.1 16.1,21 20,21 C 23.9,21 27,24.1 27,28 C 27,31.9 23.9,35 20,35 Z" />
+                    <!-- Right Location Pin -->
+                    <path d="M 80,12 C 71,12 64,19 64,28 C 64,42 80,68 80,68 C 80,68 96,42 96,28 C 96,19 89,12 80,12 Z M 80,35 C 76.1,35 73,31.9 73,28 C 73,24.1 76.1,21 80,21 C 83.9,21 87,24.1 87,28 C 87,31.9 83.9,35 80,35 Z" />
+                    <!-- Top Arrow (Rightward ->) -->
+                    <path d="M 38,24 L 52,24 L 52,18 L 64,28 L 52,38 L 52,32 L 38,32 Z" />
+                    <!-- Bottom Arrow (Leftward <-) -->
+                    <path d="M 62,50 L 48,50 L 48,44 L 36,54 L 48,64 L 48,58 L 62,58 Z" />
+                </svg>
+                <h1 class="text-lg font-bold tracking-wide leading-none flex items-center">Туда-Сюда</h1>
             </div>
             
             <!-- Auth Status Button / Profile Cabinet -->
-            <button id="btn-header-profile" onclick="handleHeaderProfileClick()" class="flex items-center gap-2 bg-white/15 hover:bg-white/25 active:scale-95 transition pl-2.5 pr-4 py-1.5 rounded-full mr-16">
+            <button id="btn-header-profile" onclick="handleHeaderProfileClick()" class="flex items-center gap-2 bg-white/15 hover:bg-white/25 active:scale-95 transition pl-2.5 pr-4 py-1.5 rounded-full">
                 <img id="header-avatar" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80" alt="Avatar" class="w-6 h-6 rounded-full object-cover border border-white/40">
                 <span id="header-name" class="text-xs font-medium max-w-[100px] truncate">Войти</span>
                 <i id="header-icon" class="fa-solid fa-right-to-bracket text-[10px] opacity-80"></i>
@@ -200,7 +211,7 @@
 
                         <div class="grid grid-cols-2 gap-2">
                             <div>
-                                <label class="text-[11px] font-semibold text-slate-600 block mb-1">Цена за место (₽)</label>
+                                <label class="text-[11px] font-semibold text-slate-600 block mb-1">Цена за весь маршрут (₽)</label>
                                 <input type="number" id="pub-price" required min="50" placeholder="500" onwheel="this.blur()" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
                             </div>
                             <div>
@@ -287,7 +298,7 @@
 
                 <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100 flex items-center justify-between">
                     <div>
-                        <div class="text-[10px] text-slate-400">Стоимость</div>
+                        <div class="text-[10px] text-slate-400">Стоимость за весь маршрут</div>
                         <div id="modal-price" class="text-lg font-black text-indigo-600"></div>
                         <div class="text-[10px] text-slate-400">за 1 место</div>
                     </div>
@@ -301,7 +312,7 @@
                 <!-- Route & Driver Comment -->
                 <div class="space-y-1">
                     <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Маршрут поездки</label>
-                    <div id="modal-route" class="bg-indigo-50/60 p-2.5 rounded-xl border border-indigo-100 text-xs font-medium text-slate-800 space-y-1">
+                    <div id="modal-route" class="bg-indigo-50/60 p-2.5 rounded-xl border border-indigo-100 text-xs font-medium text-slate-800 space-y-1.5">
                     </div>
                 </div>
 
@@ -317,7 +328,7 @@
                     </div>
                     <p class="text-[11px] text-slate-600 leading-relaxed">Чтобы написать сообщение водителю и увидеть его номер телефона, нужно авторизоваться.</p>
                     <button onclick="openLoginModal()" class="w-full vk-bg text-white py-2 rounded-xl text-xs font-medium shadow-sm">
-                        Быстрый вход через VK ID
+                        Быстрый вход через VK ID или Telegram
                     </button>
                 </div>
 
@@ -367,8 +378,8 @@
                     <!-- Messages populated dynamically -->
                 </div>
 
-                <!-- Message Input Bar -->
-                <div class="pt-2 border-t border-slate-100 flex items-center gap-2">
+                <!-- Message Input Bar (Dynamic for expired rides) -->
+                <div id="chat-input-bar" class="pt-2 border-t border-slate-100 flex items-center gap-2">
                     <input type="text" id="chat-input-text" placeholder="Напишите сообщение..." onkeydown="if(event.key==='Enter') sendChatMessage()" class="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500 transition">
                     <button onclick="sendChatMessage()" class="vk-bg text-white w-10 h-10 rounded-xl flex items-center justify-center hover:opacity-90 active:scale-95 transition">
                         <i class="fa-solid fa-paper-plane text-xs"></i>
@@ -395,11 +406,19 @@
                     <p class="text-xs text-slate-500 max-w-xs mx-auto">Войдите, чтобы связываться с водителями и публиковать свои поездки</p>
                 </div>
 
-                <div class="space-y-2 pt-2">
-                    <button onclick="performDemoLogin('vk')" class="w-full vk-bg text-white py-3 rounded-xl font-medium text-xs shadow-md flex items-center justify-center gap-2">
+                <div class="space-y-2.5 pt-2">
+                    <!-- VK Authorization Button -->
+                    <button onclick="performDemoLogin('vk')" class="w-full vk-bg text-white py-3 rounded-xl font-medium text-xs shadow-md flex items-center justify-center gap-2 hover:opacity-95 transition">
                         <i class="fa-brands fa-vk text-base"></i> Войти через VK ID
                     </button>
-                    <button onclick="performDemoLogin('phone')" class="w-full bg-slate-100 text-slate-700 hover:bg-slate-200 py-3 rounded-xl font-medium text-xs flex items-center justify-center gap-2 transition">
+                    
+                    <!-- Telegram Authorization Button -->
+                    <button onclick="loginWithTelegram()" class="w-full tg-bg text-white py-3 rounded-xl font-medium text-xs shadow-md flex items-center justify-center gap-2 hover:opacity-95 transition">
+                        <i class="fa-brands fa-telegram text-base"></i> Войти через Telegram
+                    </button>
+
+                    <!-- Phone Authorization Button (Optional/Future) -->
+                    <button onclick="performDemoLogin('phone')" class="w-full bg-slate-100 text-slate-700 hover:bg-slate-200 py-3 rounded-xl font-medium text-xs flex items-center justify-center gap-2 transition border border-slate-200">
                         <i class="fa-solid fa-mobile-screen-button text-slate-500"></i> по Номеру телефона
                     </button>
                 </div>
@@ -450,7 +469,7 @@
 
                     <div class="grid grid-cols-2 gap-2">
                         <div>
-                            <label class="text-[11px] font-semibold text-slate-600 block mb-1">Цена за место (₽)</label>
+                            <label class="text-[11px] font-semibold text-slate-600 block mb-1">Цена за весь маршрут (₽)</label>
                             <input type="number" id="edit-pub-price" required min="50" onwheel="this.blur()" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
                         </div>
                         <div>
@@ -497,8 +516,8 @@
                     <img id="cabinet-avatar" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80" alt="Avatar" class="w-16 h-16 rounded-full object-cover mx-auto border-2 border-indigo-500 shadow-sm">
                     <div>
                         <h3 id="cabinet-name" class="font-bold text-slate-800 text-sm">Пользователь</h3>
-                        <span class="text-[10px] bg-emerald-50 text-emerald-600 font-semibold px-2 py-0.5 rounded-full border border-emerald-200">
-                            <i class="fa-solid fa-check text-[9px] mr-1"></i>Авторизован через VK ID
+                        <span id="cabinet-auth-tag" class="text-[10px] bg-emerald-50 text-emerald-600 font-semibold px-2 py-0.5 rounded-full border border-emerald-200">
+                            <i class="fa-solid fa-check text-[9px] mr-1"></i>Авторизован
                         </span>
                     </div>
                 </div>
@@ -522,7 +541,7 @@
                     </button>
 
                     <button onclick="requestVkNotifications()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-2 rounded-xl font-medium text-xs transition flex items-center justify-center gap-2 border border-slate-200">
-                        <i class="fa-regular fa-bell text-indigo-600"></i> Разрешить Push-уведомления VK
+                        <i class="fa-regular fa-bell text-indigo-600"></i> Разрешить Push-уведомления
                     </button>
                 </div>
 
@@ -578,11 +597,12 @@
         let activeSelectedRide = null;
         let isFilterActive = false;
 
-        // Unread Badge State
-        let unreadMessagesCount = 0;
+        // Unread Badge State Per Conversation map { convKey: count }
+        let unreadMap = {};
 
         // Current User Profile State
         let isAuthenticated = false;
+        let authProvider = 'none'; // 'vk', 'telegram', 'phone'
         let currentUser = {
             id: null,
             name: "Пользователь",
@@ -603,31 +623,39 @@
             return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
         }
 
+        // Helper to parse route stop items into { name, price }
+        function parseStop(stopItem) {
+            if (!stopItem) return { name: '', price: null };
+            if (typeof stopItem === 'object' && stopItem !== null) {
+                return { name: stopItem.name || '', price: stopItem.price || null };
+            }
+            if (typeof stopItem === 'string') {
+                const parts = stopItem.split('|');
+                return { name: parts[0] || '', price: parts[1] ? parts[1] : null };
+            }
+            return { name: String(stopItem), price: null };
+        }
+
         function triggerVkHaptic() {
             if (typeof vkBridge !== 'undefined') {
                 vkBridge.send('VKWebAppTapticNotificationOccurred', { type: 'custom' }).catch(() => {});
             }
         }
 
+        function getTotalUnreadCount() {
+            return Object.values(unreadMap).reduce((acc, curr) => acc + (curr || 0), 0);
+        }
+
         function updateUnreadBadgeUI() {
             const badge = document.getElementById('chats-badge');
             if (!badge) return;
-            if (unreadMessagesCount > 0) {
-                badge.innerText = unreadMessagesCount > 99 ? '99+' : unreadMessagesCount;
+            const total = getTotalUnreadCount();
+            if (total > 0) {
+                badge.innerText = total > 99 ? '99+' : total;
                 badge.classList.remove('hidden');
             } else {
                 badge.classList.add('hidden');
             }
-        }
-
-        function incrementUnreadBadge() {
-            unreadMessagesCount++;
-            updateUnreadBadgeUI();
-        }
-
-        function clearUnreadBadge() {
-            unreadMessagesCount = 0;
-            updateUnreadBadgeUI();
         }
 
         function requestVkNotifications() {
@@ -635,7 +663,7 @@
                 vkBridge.send('VKWebAppAllowNotifications')
                     .then(data => {
                         if (data.result) {
-                            showToast('VK Push-уведомления включены!');
+                            showToast('Push-уведомления включены!');
                         }
                     })
                     .catch(err => {
@@ -646,54 +674,74 @@
             }
         }
 
+        // Safe Realtime initialization with WebSocket error handling for Canvas/Preview
         function initRealtimeMessages() {
             if (window.messagesChannel) {
-                supabaseClient.removeChannel(window.messagesChannel);
+                try {
+                    supabaseClient.removeChannel(window.messagesChannel);
+                } catch(e) {}
             }
 
-            window.messagesChannel = supabaseClient
-                .channel('realtime-messages-stream')
-                .on('postgres_changes', {
-                    event: 'INSERT',
-                    schema: 'public',
-                    table: 'messages'
-                }, payload => {
-                    const newMsg = payload.new;
-                    if (!newMsg || !isAuthenticated) return;
+            // Check if WebSockets are allowed / supported in the environment
+            if (typeof WebSocket === 'undefined') {
+                console.warn('WebSockets are not supported in this environment.');
+                return;
+            }
 
-                    const myId = String(currentUser.id || currentUser.name);
-                    const senderId = String(newMsg.sender_id || '');
-                    const senderName = String(newMsg.sender_name || '');
-                    const recipientId = String(newMsg.recipient_id || '');
-                    const recipientName = String(newMsg.recipient_name || '');
+            try {
+                window.messagesChannel = supabaseClient
+                    .channel('realtime-messages-stream')
+                    .on('postgres_changes', {
+                        event: 'INSERT',
+                        schema: 'public',
+                        table: 'messages'
+                    }, payload => {
+                        const newMsg = payload.new;
+                        if (!newMsg || !isAuthenticated) return;
 
-                    // Игнорируем входящее событие, если его отправили мы сами
-                    if (senderId === myId || senderName === currentUser.name) {
-                        return;
-                    }
+                        const myId = String(currentUser.id || currentUser.name);
+                        const senderId = String(newMsg.sender_id || '');
+                        const senderName = String(newMsg.sender_name || '');
+                        const recipientId = String(newMsg.recipient_id || '');
+                        const recipientName = String(newMsg.recipient_name || '');
 
-                    const isForMe = (recipientId === myId || recipientName === currentUser.name || recipientId === currentUser.name);
+                        // Ignore incoming event if sent by current user
+                        if (senderId === myId || senderName === currentUser.name) {
+                            return;
+                        }
 
-                    if (isForMe) {
-                        const isChatModalOpen = document.getElementById('chat-modal').classList.contains('open');
-                        
-                        if (isChatModalOpen && activeChat && String(activeChat.rideId) === String(newMsg.ride_id)) {
-                            appendChatMessage(newMsg);
-                            triggerVkHaptic();
-                        } else {
-                            incrementUnreadBadge();
-                            showToast(`💬 ${newMsg.sender_name}: "${newMsg.text.length > 25 ? newMsg.text.substring(0, 25) + '...' : newMsg.text}"`);
-                            triggerVkHaptic();
+                        const isForMe = (recipientId === myId || recipientName === currentUser.name || recipientId === currentUser.name);
 
-                            if (!document.getElementById('tab-chats').classList.contains('hidden')) {
-                                fetchUserConversations();
+                        if (isForMe) {
+                            const isChatModalOpen = document.getElementById('chat-modal').classList.contains('open');
+                            
+                            if (isChatModalOpen && activeChat && String(activeChat.rideId) === String(newMsg.ride_id)) {
+                                appendChatMessage(newMsg);
+                                triggerVkHaptic();
+                            } else {
+                                const convKey = `${newMsg.ride_id}_${senderName}`;
+                                unreadMap[convKey] = (unreadMap[convKey] || 0) + 1;
+                                updateUnreadBadgeUI();
+
+                                showToast(`💬 ${senderName}: "${newMsg.text.length > 25 ? newMsg.text.substring(0, 25) + '...' : newMsg.text}"`);
+                                triggerVkHaptic();
+
+                                if (!document.getElementById('tab-chats').classList.contains('hidden')) {
+                                    fetchUserConversations();
+                                }
                             }
                         }
-                    }
-                })
-                .subscribe((status) => {
-                    console.log('Realtime subscription status:', status);
-                });
+                    })
+                    .subscribe((status, err) => {
+                        if (err || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+                            console.warn('Realtime subscription unavailable in current frame context:', status, err);
+                        } else {
+                            console.log('Realtime subscription status:', status);
+                        }
+                    });
+            } catch (err) {
+                console.warn('Realtime WebSocket connection not available in this frame:', err);
+            }
         }
 
         async function initVkUserData() {
@@ -702,6 +750,7 @@
                     const user = await vkBridge.send('VKWebAppGetUserInfo');
                     if (user && user.first_name) {
                         isAuthenticated = true;
+                        authProvider = 'vk';
                         currentUser.id = String(user.id);
                         currentUser.name = `${user.first_name} ${user.last_name}`;
                         currentUser.avatar = user.photo_200 || user.photo_100 || currentUser.avatar;
@@ -728,15 +777,15 @@
                 });
 
                 if (error) {
-                    console.warn('VK Signature validation edge function not active or returned error:', error);
+                    console.warn('VK Signature validation edge function skipped:', error);
                     return;
                 }
 
                 if (data && data.valid) {
-                    console.log('Подпись VK успешно подтверждена сервером для пользователя:', data.vk_user_id);
+                    console.log('Подпись VK успешно подтверждена сервером:', data.vk_user_id);
                 }
             } catch (err) {
-                console.log('Validation request skipped or failed:', err);
+                console.log('Validation request skipped:', err);
             }
         }
 
@@ -841,6 +890,17 @@
             document.getElementById('edit-name').value = currentUser.name;
             document.getElementById('edit-phone').value = currentUser.phone;
             document.getElementById('pub-phone').value = currentUser.phone;
+
+            const tag = document.getElementById('cabinet-auth-tag');
+            if (tag) {
+                if (authProvider === 'vk') {
+                    tag.innerHTML = `<i class="fa-brands fa-vk mr-1 text-indigo-600"></i>Авторизован через VK`;
+                } else if (authProvider === 'telegram') {
+                    tag.innerHTML = `<i class="fa-brands fa-telegram mr-1 text-sky-500"></i>Авторизован через Telegram`;
+                } else {
+                    tag.innerHTML = `<i class="fa-solid fa-check mr-1 text-emerald-600"></i>Авторизован`;
+                }
+            }
         }
 
         function handleHeaderProfileClick() {
@@ -863,12 +923,64 @@
             closeLoginModal();
         }
 
+        async function loginWithTelegram() {
+            showToast('Авторизация через Telegram...');
+            
+            const dummyTgUser = {
+                id: Math.floor(10000000 + Math.random() * 90000000),
+                first_name: "Пользователь",
+                last_name: "Telegram",
+                username: "tg_user"
+            };
+
+            try {
+                // Вызов бессерверной Edge Function `telegram-auth` в Supabase
+                const { data, error } = await supabaseClient.functions.invoke('telegram-auth', {
+                    body: { user: dummyTgUser }
+                });
+
+                if (error || !data || !data.success) {
+                    console.warn('Telegram Edge Function bypass or demo mode fallback:', error);
+                    currentUser.id = `tg_${dummyTgUser.id}`;
+                    currentUser.name = `Алексей Смирнов (TG)`;
+                    currentUser.avatar = `https://api.dicebear.com/7.x/bottts/svg?seed=${dummyTgUser.id}`;
+                } else {
+                    currentUser.id = data.user.id;
+                    currentUser.name = data.user.name;
+                    currentUser.avatar = data.user.avatar;
+                }
+
+            } catch (err) {
+                console.warn('Direct function invoke fallback:', err);
+                currentUser.id = "tg_demo_user_" + Math.floor(Math.random() * 1000);
+                currentUser.name = "Алексей Смирнов (TG)";
+                currentUser.avatar = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80";
+            }
+
+            isAuthenticated = true;
+            authProvider = 'telegram';
+
+            const savedPhone = localStorage.getItem('ts_user_phone') || "+7 (911) 987-65-43";
+            currentUser.phone = savedPhone;
+
+            syncProfileUI();
+            initRealtimeMessages();
+            closeLoginModal();
+            showToast('Успешный вход через Telegram!');
+            
+            if (activeSelectedRide) {
+                openRideDetail(activeSelectedRide.id);
+            }
+            await fetchMyRidesFromSupabase();
+        }
+
         async function performDemoLogin(type) {
             if (type === 'vk' && typeof vkBridge !== 'undefined') {
                 try {
                     const user = await vkBridge.send('VKWebAppGetUserInfo');
                     if (user && user.first_name) {
                         isAuthenticated = true;
+                        authProvider = 'vk';
                         currentUser.id = String(user.id);
                         currentUser.name = `${user.first_name} ${user.last_name}`;
                         currentUser.avatar = user.photo_200 || user.photo_100 || currentUser.avatar;
@@ -888,6 +1000,7 @@
             }
 
             isAuthenticated = true;
+            authProvider = type;
             currentUser.id = "demo_user_1";
             currentUser.name = "Иван Петров";
             const savedPhone = localStorage.getItem('ts_user_phone') || "+7 (900) 123-45-67";
@@ -945,7 +1058,7 @@
             }
 
             container.innerHTML = sortedItems.map(ride => {
-                const routeFormatted = ride.route.join(' ➔ ');
+                const routeFormatted = ride.route.map(item => parseStop(item).name).join(' ➔ ');
                 const isOwner = isRideOwner(ride);
                 return `
                     <div onclick="openRideDetail(${ride.id})" class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm space-y-2 hover:border-indigo-300 active:scale-[0.99] transition cursor-pointer">
@@ -1019,7 +1132,7 @@
 
             if (activeMyRides.length > 0) {
                 html += activeMyRides.map(ride => {
-                    const routeFormatted = ride.route.join(' ➔ ');
+                    const routeFormatted = ride.route.map(item => parseStop(item).name).join(' ➔ ');
                     return `
                         <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm space-y-2.5">
                             <div class="flex items-center justify-between">
@@ -1062,7 +1175,7 @@
                 `;
 
                 html += pastMyRides.map(ride => {
-                    const routeFormatted = ride.route.join(' ➔ ');
+                    const routeFormatted = ride.route.map(item => parseStop(item).name).join(' ➔ ');
                     return `
                         <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm space-y-2 opacity-80">
                             <div class="flex items-center justify-between">
@@ -1097,9 +1210,29 @@
 
             document.getElementById('modal-comment').innerText = ride.comment ? `"${ride.comment}"` : "Комментарий не указан.";
 
-            document.getElementById('modal-route').innerHTML = ride.route.map((p, idx) => 
-                `<div class="flex items-center gap-2"><span class="w-4 h-4 rounded-full bg-indigo-100 text-indigo-600 text-[10px] font-bold flex items-center justify-center">${idx + 1}</span> <span>${escapeHtml(p)}</span></div>`
-            ).join('');
+            const totalStops = ride.route.length;
+            document.getElementById('modal-route').innerHTML = ride.route.map((item, idx) => {
+                const parsed = parseStop(item);
+                const isFirst = idx === 0;
+                const isLast = idx === totalStops - 1;
+
+                let priceTag = '';
+                if (!isFirst && !isLast) {
+                    if (parsed.price && parsed.price !== '') {
+                        priceTag = `<span class="text-indigo-600 font-bold ml-1.5">${escapeHtml(parsed.price)} ₽</span>`;
+                    } else {
+                        priceTag = `<span class="text-slate-400 italic text-[10px] ml-1.5">(Уточнить стоимость)</span>`;
+                    }
+                }
+
+                return `
+                    <div class="flex items-center gap-2">
+                        <span class="w-4 h-4 rounded-full bg-indigo-100 text-indigo-600 text-[10px] font-bold flex items-center justify-center shrink-0">${idx + 1}</span>
+                        <span class="truncate">${escapeHtml(parsed.name)}</span>
+                        ${priceTag}
+                    </div>
+                `;
+            }).join('');
 
             const authBanner = document.getElementById('auth-required-banner');
             const contactActions = document.getElementById('modal-contact-actions');
@@ -1157,8 +1290,12 @@
             if (!ride) return;
 
             document.getElementById('edit-ride-id').value = ride.id;
-            document.getElementById('edit-pub-from').value = ride.route[0] || '';
-            document.getElementById('edit-pub-to').value = ride.route[ride.route.length - 1] || '';
+            
+            const firstStop = parseStop(ride.route[0]);
+            const lastStop = parseStop(ride.route[ride.route.length - 1]);
+
+            document.getElementById('edit-pub-from').value = firstStop.name || '';
+            document.getElementById('edit-pub-to').value = lastStop.name || '';
             document.getElementById('edit-pub-date').value = ride.date;
             document.getElementById('edit-pub-time').value = ride.time;
             document.getElementById('edit-pub-price').value = ride.price;
@@ -1170,8 +1307,9 @@
             stopsContainer.innerHTML = '';
             
             const intermediateStops = ride.route.slice(1, -1);
-            intermediateStops.forEach(stopName => {
-                addEditStopInput(stopName);
+            intermediateStops.forEach(stopItem => {
+                const parsed = parseStop(stopItem);
+                addEditStopInput(parsed.name, parsed.price || '');
             });
 
             document.getElementById('edit-ride-modal').classList.add('open');
@@ -1191,13 +1329,14 @@
             closeEditRideModal();
         }
 
-        function addEditStopInput(value = '') {
+        function addEditStopInput(value = '', price = '') {
             const container = document.getElementById('edit-stops-container');
             const stopDiv = document.createElement('div');
-            stopDiv.className = 'flex items-center gap-1';
+            stopDiv.className = 'flex items-center gap-1.5';
             stopDiv.innerHTML = `
-                <input type="text" value="${escapeHtml(value)}" placeholder="Промежуточная остановка" class="edit-stop-input w-full p-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
-                <button type="button" onclick="this.parentElement.remove()" class="text-rose-400 hover:text-rose-600 p-1.5">
+                <input type="text" value="${escapeHtml(value)}" placeholder="Промежуточная остановка" class="edit-stop-input flex-1 p-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
+                <input type="number" value="${escapeHtml(price)}" placeholder="Цена, ₽" class="edit-stop-price w-24 p-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500" onwheel="this.blur()">
+                <button type="button" onclick="this.parentElement.remove()" class="text-rose-400 hover:text-rose-600 p-1.5 shrink-0">
                     <i class="fa-solid fa-trash-can"></i>
                 </button>
             `;
@@ -1218,7 +1357,16 @@
             const comment = document.getElementById('edit-pub-comment').value;
 
             const stopInputs = document.querySelectorAll('.edit-stop-input');
-            const stops = Array.from(stopInputs).map(i => i.value.trim()).filter(v => v !== '');
+            const priceInputs = document.querySelectorAll('.edit-stop-price');
+            
+            const stops = [];
+            stopInputs.forEach((input, index) => {
+                const cityName = input.value.trim();
+                const cityPrice = priceInputs[index] ? priceInputs[index].value.trim() : '';
+                if (cityName !== '') {
+                    stops.push(cityPrice ? `${cityName}|${cityPrice}` : cityName);
+                }
+            });
 
             const route = [from, ...stops, to];
 
@@ -1368,13 +1516,26 @@
                 return;
             }
 
+            const rideDateTime = new Date(`${activeSelectedRide.date}T${activeSelectedRide.time}`);
+            const now = new Date();
+            const isExpired = rideDateTime < now;
+
+            const routeText = activeSelectedRide.route.map(item => parseStop(item).name).join(' ➔ ');
+
             activeChat = {
                 rideId: activeSelectedRide.id,
                 recipientId: activeSelectedRide.userId || activeSelectedRide.driverName,
                 recipientName: activeSelectedRide.driverName,
                 recipientAvatar: activeSelectedRide.driverAvatar,
-                routeText: activeSelectedRide.route.join(' ➔ ')
+                routeText: routeText,
+                isExpired: isExpired
             };
+
+            const convKey = `${activeSelectedRide.id}_${activeSelectedRide.driverName}`;
+            if (unreadMap[convKey]) {
+                delete unreadMap[convKey];
+                updateUnreadBadgeUI();
+            }
 
             closeModal();
             openChatModal();
@@ -1386,7 +1547,23 @@
             document.getElementById('chat-header-avatar').src = activeChat.recipientAvatar;
             document.getElementById('chat-header-name').innerText = activeChat.recipientName;
             document.getElementById('chat-header-route').innerText = activeChat.routeText;
-            document.getElementById('chat-input-text').value = '';
+
+            const inputBar = document.getElementById('chat-input-bar');
+
+            if (activeChat.isExpired) {
+                inputBar.innerHTML = `
+                    <div class="w-full text-center py-2 px-3 bg-amber-50 border border-amber-200 text-amber-800 text-[11px] rounded-xl font-medium shadow-xs">
+                        Поездка завершена. Чат автоматически удалится через 5 дней.
+                    </div>
+                `;
+            } else {
+                inputBar.innerHTML = `
+                    <input type="text" id="chat-input-text" placeholder="Напишите сообщение..." onkeydown="if(event.key==='Enter') sendChatMessage()" class="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500 transition">
+                    <button onclick="sendChatMessage()" class="vk-bg text-white w-10 h-10 rounded-xl flex items-center justify-center hover:opacity-90 active:scale-95 transition">
+                        <i class="fa-solid fa-paper-plane text-xs"></i>
+                    </button>
+                `;
+            }
 
             document.getElementById('chat-modal').classList.add('open');
             fetchChatMessages();
@@ -1502,7 +1679,14 @@
         }
 
         async function sendChatMessage() {
+            if (activeChat && activeChat.isExpired) {
+                showToast('Поездка завершена. Отправка сообщений недоступна');
+                return;
+            }
+
             const input = document.getElementById('chat-input-text');
+            if (!input) return;
+
             const text = input.value.trim();
 
             if (!text || !activeChat || !isAuthenticated) return;
@@ -1513,6 +1697,7 @@
                 ride_id: activeChat.rideId,
                 sender_id: currentUser.id || currentUser.name,
                 sender_name: currentUser.name,
+                sender_avatar: currentUser.avatar,
                 recipient_id: activeChat.recipientId,
                 recipient_name: activeChat.recipientName,
                 text: text,
@@ -1582,14 +1767,13 @@
                     return;
                 }
 
-                // Извлекаем уникальные ID поездок
                 const rideIds = [...new Set(data.map(m => m.ride_id))];
                 const ridesMap = new Map();
 
                 if (rideIds.length > 0) {
                     const { data: ridesData } = await supabaseClient
                         .from('rides')
-                        .select('id, driver_name, driver_avatar, route, user_id')
+                        .select('id, driver_name, driver_avatar, route, user_id, date, time')
                         .in('id', rideIds);
 
                     if (ridesData) {
@@ -1597,32 +1781,52 @@
                     }
                 }
 
-                // Группируем сообщения по поездке и собеседнику
                 const convMap = new Map();
+                const now = new Date();
 
                 data.forEach(msg => {
-                    const isMySender = (String(msg.sender_id) === String(currentUser.id) || msg.sender_name === currentUser.name);
                     const ride = ridesMap.get(msg.ride_id);
-                    const isDriver = ride ? (String(ride.user_id) === String(currentUser.id) || ride.driver_name === currentUser.name) : false;
+                    let isExpired = false;
+                    let daysPassed = 0;
 
-                    let otherPartyName = isMySender ? msg.recipient_name : msg.sender_name;
-                    let otherPartyAvatar = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80";
-
-                    if (ride) {
-                        if (!isDriver) {
-                            otherPartyName = ride.driver_name || otherPartyName;
-                            otherPartyAvatar = ride.driver_avatar || otherPartyAvatar;
+                    if (ride && ride.date && ride.time) {
+                        const rideDateTime = new Date(`${ride.date}T${ride.time}`);
+                        if (rideDateTime < now) {
+                            isExpired = true;
+                            daysPassed = (now - rideDateTime) / (1000 * 60 * 60 * 24);
                         }
                     }
 
+                    if (daysPassed > 5) {
+                        supabaseClient.from('messages').delete().eq('ride_id', msg.ride_id).then(() => {});
+                        return;
+                    }
+
+                    const isMySender = (String(msg.sender_id) === String(currentUser.id) || msg.sender_name === currentUser.name);
+                    const isDriver = ride ? (String(ride.user_id) === String(currentUser.id) || ride.driver_name === currentUser.name) : false;
+
+                    let otherPartyName = isMySender ? msg.recipient_name : msg.sender_name;
+                    let defaultAvatar = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80";
+                    let otherPartyAvatar = defaultAvatar;
+
+                    if (ride && !isDriver) {
+                        otherPartyName = ride.driver_name || otherPartyName;
+                        otherPartyAvatar = ride.driver_avatar || defaultAvatar;
+                    } else if (!isMySender && msg.sender_avatar) {
+                        otherPartyAvatar = msg.sender_avatar;
+                    } else if (isMySender && msg.recipient_avatar) {
+                        otherPartyAvatar = msg.recipient_avatar;
+                    }
+
                     const routeText = (ride && ride.route && ride.route.length > 0)
-                        ? ride.route.join(' ➔ ')
+                        ? ride.route.map(item => parseStop(item).name).join(' ➔ ')
                         : `Поездка №${msg.ride_id}`;
 
                     const convKey = `${msg.ride_id}_${otherPartyName}`;
 
                     if (!convMap.has(convKey)) {
                         convMap.set(convKey, {
+                            convKey: convKey,
                             rideId: msg.ride_id,
                             otherPartyName: otherPartyName,
                             otherPartyId: isMySender ? msg.recipient_id : msg.sender_id,
@@ -1630,7 +1834,8 @@
                             routeText: routeText,
                             lastMessage: msg.text,
                             lastTime: msg.created_at,
-                            isMyLast: isMySender
+                            isMyLast: isMySender,
+                            isExpired: isExpired
                         });
                     }
                 });
@@ -1639,15 +1844,34 @@
                     new Date(b.lastTime) - new Date(a.lastTime)
                 );
 
+                if (userConversations.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-10 bg-white rounded-2xl border border-slate-100 space-y-2">
+                            <i class="fa-regular fa-comments text-3xl text-slate-300"></i>
+                            <p class="text-xs font-medium text-slate-600">У вас пока нет активных чатов</p>
+                        </div>
+                    `;
+                    return;
+                }
+
                 container.innerHTML = userConversations.map((conv, idx) => {
                     const formattedTime = new Date(conv.lastTime).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                    const unreadCount = unreadMap[conv.convKey] || 0;
+
                     return `
-                        <div onclick="openExistingChatByIndex(${idx})" class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-3 hover:border-indigo-200 active:scale-[0.99] transition cursor-pointer">
+                        <div onclick="openExistingChatByIndex(${idx})" class="bg-white p-3.5 rounded-2xl border ${unreadCount > 0 ? 'border-indigo-300 bg-indigo-50/20' : 'border-slate-100'} shadow-sm flex items-center justify-between gap-3 hover:border-indigo-200 active:scale-[0.99] transition cursor-pointer relative">
                             <div class="flex items-center gap-3">
-                                <img src="${conv.otherPartyAvatar}" alt="${escapeHtml(conv.otherPartyName)}" class="w-10 h-10 rounded-full object-cover border border-slate-100 shadow-sm" onerror="this.src='https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80'">
+                                <div class="relative">
+                                    <img src="${conv.otherPartyAvatar}" alt="${escapeHtml(conv.otherPartyName)}" class="w-10 h-10 rounded-full object-cover border border-slate-100 shadow-sm" onerror="this.src='https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80'">
+                                    ${unreadCount > 0 ? `<span class="absolute -top-1 -right-1 bg-rose-500 text-white text-[9px] font-bold rounded-full h-4 min-w-[16px] px-1 flex items-center justify-center border border-white shadow-sm animate-pulse">${unreadCount}</span>` : ''}
+                                </div>
                                 <div class="space-y-0.5 max-w-[180px]">
-                                    <h4 class="font-bold text-slate-800 text-xs truncate">${escapeHtml(conv.otherPartyName)}</h4>
-                                    <p class="text-[11px] text-slate-500 truncate font-medium">
+                                    <div class="flex items-center gap-1.5">
+                                        <h4 class="font-bold text-slate-800 text-xs truncate">${escapeHtml(conv.otherPartyName)}</h4>
+                                        ${unreadCount > 0 ? `<span class="text-[9px] bg-rose-100 text-rose-600 px-1.5 py-0.2 rounded font-bold">Новые</span>` : ''}
+                                        ${conv.isExpired ? `<span class="text-[9px] bg-amber-100 text-amber-700 px-1.5 py-0.2 rounded font-medium">Завершён</span>` : ''}
+                                    </div>
+                                    <p class="text-[11px] ${unreadCount > 0 ? 'text-slate-800 font-bold' : 'text-slate-500 font-medium'} truncate">
                                         ${conv.isMyLast ? '<span class="text-indigo-600 font-semibold">Вы: </span>' : ''}${escapeHtml(conv.lastMessage)}
                                     </p>
                                 </div>
@@ -1668,12 +1892,18 @@
             const conv = userConversations[index];
             if (!conv) return;
 
+            if (unreadMap[conv.convKey]) {
+                delete unreadMap[conv.convKey];
+                updateUnreadBadgeUI();
+            }
+
             activeChat = {
                 rideId: conv.rideId,
                 recipientId: conv.otherPartyId,
                 recipientName: conv.otherPartyName,
                 recipientAvatar: conv.otherPartyAvatar,
-                routeText: conv.routeText
+                routeText: conv.routeText,
+                isExpired: conv.isExpired
             };
             openChatModal();
         }
@@ -1681,10 +1911,11 @@
         function addStopInput() {
             const container = document.getElementById('stops-container');
             const stopDiv = document.createElement('div');
-            stopDiv.className = 'flex items-center gap-1';
+            stopDiv.className = 'flex items-center gap-1.5';
             stopDiv.innerHTML = `
-                <input type="text" placeholder="Промежуточная остановка" class="stop-input w-full p-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
-                <button type="button" onclick="this.parentElement.remove()" class="text-rose-400 hover:text-rose-600 p-1.5">
+                <input type="text" placeholder="Промежуточная остановка" class="stop-input flex-1 p-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
+                <input type="number" placeholder="Цена, ₽" class="stop-price w-24 p-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500" onwheel="this.blur()">
+                <button type="button" onclick="this.parentElement.remove()" class="text-rose-400 hover:text-rose-600 p-1.5 shrink-0">
                     <i class="fa-solid fa-trash-can"></i>
                 </button>
             `;
@@ -1720,7 +1951,16 @@
             }
 
             const stopInputs = document.querySelectorAll('.stop-input');
-            const stops = Array.from(stopInputs).map(i => i.value.trim()).filter(v => v !== '');
+            const priceInputs = document.querySelectorAll('.stop-price');
+            
+            const stops = [];
+            stopInputs.forEach((input, index) => {
+                const cityName = input.value.trim();
+                const cityPrice = priceInputs[index] ? priceInputs[index].value.trim() : '';
+                if (cityName !== '') {
+                    stops.push(cityPrice ? `${cityName}|${cityPrice}` : cityName);
+                }
+            });
 
             const route = [from, ...stops, to];
 
@@ -1817,9 +2057,9 @@
                 })) : [];
 
                 searchResultsRides = rawList.filter(ride => {
-                    const routeLower = ride.route.map(r => r.toLowerCase());
-                    let fromIndex = routeLower.findIndex(r => r.includes(from));
-                    let toIndex = routeLower.findIndex(r => r.includes(to));
+                    const routeNamesLower = ride.route.map(item => parseStop(item).name.toLowerCase());
+                    let fromIndex = routeNamesLower.findIndex(r => r.includes(from));
+                    let toIndex = routeNamesLower.findIndex(r => r.includes(to));
                     return fromIndex !== -1 && toIndex !== -1 && fromIndex < toIndex;
                 });
 
@@ -1856,7 +2096,6 @@
             if (tabName === 'my-rides') {
                 await fetchMyRidesFromSupabase();
             } else if (tabName === 'chats') {
-                clearUnreadBadge();
                 await fetchUserConversations();
             } else if (tabName === 'publish') {
                 document.getElementById('pub-phone').value = currentUser.phone;
