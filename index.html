@@ -112,7 +112,7 @@
                     <!-- Left Location Pin -->
                     <path d="M 20,12 C 11,12 4,19 4,28 C 4,42 20,68 20,68 C 20,68 36,42 36,28 C 36,19 29,12 20,12 Z M 20,35 C 16.1,35 13,31.9 13,28 C 13,24.1 16.1,21 20,21 C 23.9,21 27,24.1 27,28 C 27,31.9 23.9,35 20,35 Z" />
                     <!-- Right Location Pin -->
-                    <path d="M 80,12 C 71,12 64,19 64,28 C 64,42 80,68 80,68 C 80,68 96,42 96,28 C 96,19 89,12 80,12 Z M 80,35 C 76.1,35 73,31.9 73,28 C 73,24.1 76.1,21 80,21 C 83.9,21 87,24.1 87,28 C 87,31.9 83.9,35 80,35 Z" />
+                    <path d="M 80,12 C 71,12 64,19 64,28 C 64,42 80,68 80,68 C 80,68 96,42 96,28 C 96,19 89,12 80,12 Z M 80,35 C 76.1,35 73,31.9 73,28 C 73,24.1 16.1,21 80,21 C 83.9,21 87,24.1 87,28 C 87,31.9 83.9,35 80,35 Z" />
                     <!-- Top Arrow (Rightward ->) -->
                     <path d="M 38,24 L 52,24 L 52,18 L 64,28 L 52,38 L 52,32 L 38,32 Z" />
                     <!-- Bottom Arrow (Leftward <-) -->
@@ -615,6 +615,8 @@
 
         // Active Chat State
         let activeChat = null;
+        let pollingIntervalTimer = null;
+        let activeChatRefreshTimer = null;
 
         // Targeted local stores
         let searchResultsRides = [];
@@ -687,6 +689,27 @@
             }
         }
 
+        // Background Message Polling (Guarantees messages arrive even if WebSockets drop)
+        function startMessagesPolling() {
+            if (pollingIntervalTimer) clearInterval(pollingIntervalTimer);
+            
+            // Background check for new conversations & unread counts every 5 seconds
+            pollingIntervalTimer = setInterval(async () => {
+                if (!isAuthenticated) return;
+                
+                // If chat modal is open, refresh active chat messages
+                const isChatModalOpen = document.getElementById('chat-modal').classList.contains('open');
+                if (isChatModalOpen && activeChat) {
+                    await fetchChatMessages(true);
+                }
+
+                // Refresh unread counts / list if on chats tab
+                if (!document.getElementById('tab-chats').classList.contains('hidden')) {
+                    await fetchUserConversations(true);
+                }
+            }, 5000);
+        }
+
         // Realtime Messages Stream
         function initRealtimeMessages() {
             if (window.messagesChannel) {
@@ -738,7 +761,7 @@
                                 triggerVkHaptic();
 
                                 if (!document.getElementById('tab-chats').classList.contains('hidden')) {
-                                    fetchUserConversations();
+                                    fetchUserConversations(true);
                                 }
                             }
                         }
@@ -767,6 +790,7 @@
                 saveUserSession();
                 syncProfileUI();
                 initRealtimeMessages();
+                startMessagesPolling();
                 await fetchMyRidesFromSupabase();
             }
         }
@@ -790,6 +814,7 @@
                         await fetchUserPhoneFromDB();
                         syncProfileUI();
                         initRealtimeMessages();
+                        startMessagesPolling();
                     }
                 } catch (e) {
                     console.log('Outside VK environment or permission denied:', e);
@@ -938,6 +963,7 @@
         }
 
         function logoutAccount() {
+            if (pollingIntervalTimer) clearInterval(pollingIntervalTimer);
             isAuthenticated = false;
             authProvider = 'none';
             currentUser = {
@@ -995,6 +1021,7 @@
                             await fetchUserPhoneFromDB();
                             syncProfileUI();
                             initRealtimeMessages();
+                            startMessagesPolling();
                             closeLoginModal();
                             showToast(`Добро пожаловать, ${user.first_name}!`);
                             if (activeSelectedRide) openRideDetail(activeSelectedRide.id);
@@ -1019,6 +1046,7 @@
             saveUserSession();
             syncProfileUI();
             initRealtimeMessages();
+            startMessagesPolling();
             closeLoginModal();
             showToast('Успешный вход!');
             if (activeSelectedRide) openRideDetail(activeSelectedRide.id);
@@ -1613,15 +1641,17 @@
             container.scrollTop = container.scrollHeight;
         }
 
-        async function fetchChatMessages() {
+        async function fetchChatMessages(isSilent = false) {
             if (!activeChat || !isAuthenticated) return;
 
             const container = document.getElementById('chat-messages-container');
-            container.innerHTML = `
-                <div class="text-center py-6 text-slate-400 text-xs">
-                    <i class="fa-solid fa-spinner animate-spin mr-1"></i> Загрузка сообщений...
-                </div>
-            `;
+            if (!isSilent) {
+                container.innerHTML = `
+                    <div class="text-center py-6 text-slate-400 text-xs">
+                        <i class="fa-solid fa-spinner animate-spin mr-1"></i> Загрузка сообщений...
+                    </div>
+                `;
+            }
 
             try {
                 const { data, error } = await supabaseClient
@@ -1631,12 +1661,19 @@
                     .order('created_at', { ascending: true });
 
                 if (error || !data || data.length === 0) {
-                    container.innerHTML = `
-                        <div class="text-center py-8 text-slate-400 text-xs px-4">
-                            Сообщений пока нет. Напишите водителю, чтобы договориться о деталях поездки!
-                        </div>
-                    `;
+                    if (!isSilent) {
+                        container.innerHTML = `
+                            <div class="text-center py-8 text-slate-400 text-xs px-4">
+                                Сообщений пока нет. Напишите водителю, чтобы договориться о деталях поездки!
+                            </div>
+                        `;
+                    }
                     return;
+                }
+
+                const currentCount = container.querySelectorAll('.bg-indigo-600, .bg-slate-100').length;
+                if (isSilent && data.length === currentCount) {
+                    return; // No new messages, stay unchanged
                 }
 
                 container.innerHTML = data.map(msg => {
@@ -1715,7 +1752,7 @@
             }
         }
 
-        async function fetchUserConversations() {
+        async function fetchUserConversations(isSilent = false) {
             const container = document.getElementById('chats-list');
             if (!container) return;
 
@@ -1734,11 +1771,13 @@
                 return;
             }
 
-            container.innerHTML = `
-                <div class="text-center py-8 text-slate-400 text-xs">
-                    <i class="fa-solid fa-spinner animate-spin mr-1"></i> Загрузка диалогов...
-                </div>
-            `;
+            if (!isSilent) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-slate-400 text-xs">
+                        <i class="fa-solid fa-spinner animate-spin mr-1"></i> Загрузка диалогов...
+                    </div>
+                `;
+            }
 
             try {
                 let myId = String(currentUser.id || currentUser.name);
@@ -1749,13 +1788,15 @@
                     .order('created_at', { ascending: false });
 
                 if (error || !data || data.length === 0) {
-                    container.innerHTML = `
-                        <div class="text-center py-10 bg-white rounded-2xl border border-slate-100 space-y-2">
-                            <i class="fa-regular fa-comments text-3xl text-slate-300"></i>
-                            <p class="text-xs font-medium text-slate-600">У вас пока нет активных чатов</p>
-                            <p class="text-[11px] text-slate-400">Найдите поездку и напишите водителю, чтобы начать общение</p>
-                        </div>
-                    `;
+                    if (!isSilent) {
+                        container.innerHTML = `
+                            <div class="text-center py-10 bg-white rounded-2xl border border-slate-100 space-y-2">
+                                <i class="fa-regular fa-comments text-3xl text-slate-300"></i>
+                                <p class="text-xs font-medium text-slate-600">У вас пока нет активных чатов</p>
+                                <p class="text-[11px] text-slate-400">Найдите поездку и напишите водителю, чтобы начать общение</p>
+                            </div>
+                        `;
+                    }
                     return;
                 }
 
@@ -1826,12 +1867,14 @@
                 );
 
                 if (userConversations.length === 0) {
-                    container.innerHTML = `
-                        <div class="text-center py-10 bg-white rounded-2xl border border-slate-100 space-y-2">
-                            <i class="fa-regular fa-comments text-3xl text-slate-300"></i>
-                            <p class="text-xs font-medium text-slate-600">У вас пока нет активных чатов</p>
-                        </div>
-                    `;
+                    if (!isSilent) {
+                        container.innerHTML = `
+                            <div class="text-center py-10 bg-white rounded-2xl border border-slate-100 space-y-2">
+                                <i class="fa-regular fa-comments text-3xl text-slate-300"></i>
+                                <p class="text-xs font-medium text-slate-600">У вас пока нет активных чатов</p>
+                            </div>
+                        `;
+                    }
                     return;
                 }
 
@@ -2125,6 +2168,10 @@
             syncProfileUI();
             await initTgUserData();
             await initVkUserData();
+            if (isAuthenticated) {
+                initRealtimeMessages();
+                startMessagesPolling();
+            }
             renderRides();
         }
 
