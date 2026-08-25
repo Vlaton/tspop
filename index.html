@@ -107,7 +107,7 @@
         <!-- Header Bar -->
         <header class="vk-bg text-white p-3.5 sticky top-0 z-20 shadow-md flex items-center justify-between">
             <div class="flex items-center gap-2.5">
-                <!-- Custom App Logo Emblem SVG (Perfectly Centered Vertically) -->
+                <!-- Custom App Logo Emblem SVG (Perfectly Aligned) -->
                 <svg class="w-7 h-7 text-white fill-current shrink-0 block" viewBox="0 10 100 60" xmlns="http://www.w3.org/2000/svg">
                     <!-- Left Location Pin -->
                     <path d="M 20,12 C 11,12 4,19 4,28 C 4,42 20,68 20,68 C 20,68 36,42 36,28 C 36,19 29,12 20,12 Z M 20,35 C 16.1,35 13,31.9 13,28 C 13,24.1 16.1,21 20,21 C 23.9,21 27,24.1 27,28 C 27,31.9 23.9,35 20,35 Z" />
@@ -129,7 +129,6 @@
             </button>
         </header>
 
-        <!-- Main Content Area -->
         <main class="flex-1 p-4 overflow-y-auto">
 
             <!-- TAB 1: SEARCH RIDES -->
@@ -279,7 +278,6 @@
 
         </main>
 
-        <!-- DETAIL RIDE MODAL DRAWER -->
         <div id="detail-modal" class="modal-overlay" onclick="closeModalOnBackdrop(event)">
             <div class="modal-sheet relative space-y-4" onclick="event.stopPropagation()">
                 <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-1"></div>
@@ -356,7 +354,6 @@
             </div>
         </div>
 
-        <!-- FULLSCREEN CHAT MODAL OVERLAY -->
         <div id="chat-modal" class="modal-overlay" onclick="closeChatModalOnBackdrop(event)">
             <div class="chat-sheet relative" onclick="event.stopPropagation()">
                 
@@ -391,7 +388,6 @@
             </div>
         </div>
 
-        <!-- AUTH LOGIN MODAL -->
         <div id="login-modal" class="modal-overlay" onclick="closeLoginModalOnBackdrop(event)">
             <div class="modal-sheet relative space-y-4" onclick="event.stopPropagation()">
                 <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-1"></div>
@@ -419,7 +415,7 @@
                         <i class="fa-brands fa-telegram text-base"></i> Войти через Telegram
                     </button>
 
-                    <!-- Phone Authorization Button (Optional/Future) -->
+                    <!-- Phone Authorization Button -->
                     <button onclick="performDemoLogin('phone')" class="w-full bg-slate-100 text-slate-700 hover:bg-slate-200 py-3 rounded-xl font-medium text-xs flex items-center justify-center gap-2 transition border border-slate-200">
                         <i class="fa-solid fa-mobile-screen-button text-slate-500"></i> по Номеру телефона
                     </button>
@@ -427,7 +423,6 @@
             </div>
         </div>
 
-        <!-- EDIT RIDE MODAL DRAWER -->
         <div id="edit-ride-modal" class="modal-overlay" onclick="closeEditRideModalOnBackdrop(event)">
             <div class="modal-sheet relative space-y-4" onclick="event.stopPropagation()">
                 <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-1"></div>
@@ -505,7 +500,6 @@
             </div>
         </div>
 
-        <!-- PROFILE / CABINET MODAL -->
         <div id="profile-modal" class="modal-overlay" onclick="closeProfileModalOnBackdrop(event)">
             <div class="modal-sheet relative space-y-4" onclick="event.stopPropagation()">
                 <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-1"></div>
@@ -561,7 +555,6 @@
             <span id="toast-text" class="truncate">Уведомление</span>
         </div>
 
-        <!-- Bottom Navigation Bar (4 items: Поиск, Создать, Чаты, Мои поездки) -->
         <nav class="fixed bottom-0 w-full max-w-md bg-white border-t border-slate-200 flex justify-around py-2 z-30">
             <button onclick="switchTab('search')" id="nav-search" class="flex flex-col items-center gap-1 active-tab w-1/4">
                 <i class="fa-solid fa-magnifying-glass text-lg"></i>
@@ -604,7 +597,7 @@
         let activeSelectedRide = null;
         let isFilterActive = false;
 
-        // Unread Badge State Per Conversation map { convKey: count }
+        // Unread Badge State Per Conversation map
         let unreadMap = {};
 
         // Restore auth session from localStorage if present
@@ -641,10 +634,9 @@
 
         function escapeHtml(text) {
             if (!text) return '';
-            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+            return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
         }
 
-        // Helper to parse route stop items into { name, price }
         function parseStop(stopItem) {
             if (!stopItem) return { name: '', price: null };
             if (typeof stopItem === 'object' && stopItem !== null) {
@@ -695,7 +687,7 @@
             }
         }
 
-        // Safe Realtime initialization with WebSocket error handling for Canvas/Preview
+        // Realtime Messages Stream
         function initRealtimeMessages() {
             if (window.messagesChannel) {
                 try {
@@ -704,7 +696,7 @@
             }
 
             if (typeof WebSocket === 'undefined') {
-                console.warn('WebSockets are not supported in this environment.');
+                console.warn('WebSockets not supported in environment.');
                 return;
             }
 
@@ -753,18 +745,34 @@
                     })
                     .subscribe((status, err) => {
                         if (err || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-                            console.warn('Realtime subscription unavailable in current frame context:', status, err);
-                        } else {
-                            console.log('Realtime subscription status:', status);
+                            console.warn('Realtime subscription error/timeout');
                         }
                     });
             } catch (err) {
-                console.warn('Realtime WebSocket connection not available in this frame:', err);
+                console.warn('Realtime connection not available:', err);
+            }
+        }
+
+        async function initTgUserData() {
+            if (isAuthenticated) return;
+            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
+                const tgUser = window.Telegram.WebApp.initDataUnsafe.user;
+                isAuthenticated = true;
+                authProvider = 'telegram';
+                currentUser.id = `tg_${tgUser.id}`;
+                currentUser.name = [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ');
+                currentUser.avatar = tgUser.photo_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${tgUser.id}`;
+                currentUser.phone = localStorage.getItem('ts_user_phone') || "";
+
+                saveUserSession();
+                syncProfileUI();
+                initRealtimeMessages();
+                await fetchMyRidesFromSupabase();
             }
         }
 
         async function initVkUserData() {
-            if (isAuthenticated) return; // session restored
+            if (isAuthenticated) return;
 
             const isInsideVk = window.location.search.includes('vk_user_id') || (window.name && window.name.includes('vk'));
 
@@ -952,57 +960,21 @@
         }
 
         async function loginWithTelegram() {
-            showToast('Авторизация через Telegram...');
-            
-            const TELEGRAM_BOT_USERNAME = "ts_poezdki_bot";
-
             if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
-                const tgUser = window.Telegram.WebApp.initDataUnsafe.user;
-                try {
-                    const { data, error } = await supabaseClient.functions.invoke('telegram-auth', {
-                        body: { user: tgUser }
-                    });
-
-                    if (data && data.success) {
-                        currentUser.id = data.user.id;
-                        currentUser.name = data.user.name;
-                        currentUser.avatar = data.user.avatar;
-                    } else {
-                        currentUser.id = `tg_${tgUser.id}`;
-                        currentUser.name = [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ');
-                        currentUser.avatar = tgUser.photo_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${tgUser.id}`;
-                    }
-                } catch (err) {
-                    currentUser.id = `tg_${tgUser.id}`;
-                    currentUser.name = [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ');
-                    currentUser.avatar = tgUser.photo_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${tgUser.id}`;
-                }
-
-                isAuthenticated = true;
-                authProvider = 'telegram';
-
-                const savedPhone = localStorage.getItem('ts_user_phone') || "";
-                currentUser.phone = savedPhone;
-
-                saveUserSession();
-                syncProfileUI();
-                initRealtimeMessages();
+                await initTgUserData();
                 closeLoginModal();
                 showToast(`Добро пожаловать, ${currentUser.name}!`);
-                
-                if (activeSelectedRide) {
-                    openRideDetail(activeSelectedRide.id);
-                }
-                await fetchMyRidesFromSupabase();
+                if (activeSelectedRide) openRideDetail(activeSelectedRide.id);
                 return;
             }
 
-            window.open(`https://t.me/${TELEGRAM_BOT_USERNAME}`, '_blank');
+            // Outside Telegram Mini App: Open Telegram Bot
+            showToast('Переход в Telegram...');
+            window.open('https://t.me/ts_poezdki_bot', '_blank');
         }
 
         async function performDemoLogin(type) {
             if (type === 'vk') {
-                showToast('Авторизация через VK...');
                 const isInsideVk = window.location.search.includes('vk_user_id') || (window.name && window.name.includes('vk'));
                 
                 if (typeof vkBridge !== 'undefined' && isInsideVk) {
@@ -1030,27 +1002,26 @@
                             return;
                         }
                     } catch (e) {
-                        console.log('VK Auth error or timeout, proceeding with demo profile:', e);
+                        console.log('VK Auth timeout/error:', e);
                     }
                 }
             }
 
+            // Default Clean Demo Fallback for standard browsers
             isAuthenticated = true;
             authProvider = type;
-            currentUser.id = "user_demo_" + Math.floor(Math.random() * 1000);
-            currentUser.name = type === 'vk' ? "Владислав Маркин (VK)" : "Иван Петров";
-            const savedPhone = localStorage.getItem('ts_user_phone') || "+7 (900) 123-45-67";
+            currentUser.id = "user_vlad_" + Math.floor(Math.random() * 1000);
+            currentUser.name = "Влад Маркин";
+            currentUser.avatar = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80";
+            const savedPhone = localStorage.getItem('ts_user_phone') || "+7 (999) 888-77-77";
             currentUser.phone = savedPhone;
-            currentUser.avatar = type === 'vk' ? "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" : currentUser.avatar;
 
             saveUserSession();
             syncProfileUI();
             initRealtimeMessages();
             closeLoginModal();
-            showToast('Успешный вход в аккаунт!');
-            if (activeSelectedRide) {
-                openRideDetail(activeSelectedRide.id);
-            }
+            showToast('Успешный вход!');
+            if (activeSelectedRide) openRideDetail(activeSelectedRide.id);
             await fetchMyRidesFromSupabase();
         }
 
@@ -1199,8 +1170,6 @@
                         </div>
                     `;
                 }).join('');
-            } else {
-                html += `<p class="text-xs text-slate-400 italic">Нет актуальных предстоящих поездок</p>`;
             }
 
             if (pastMyRides.length > 0) {
@@ -1424,7 +1393,6 @@
                     .eq('id', rideId);
 
                 if (error) {
-                    console.error('Supabase update error:', error);
                     showToast('Ошибка при сохранении изменений');
                     return;
                 }
@@ -1445,7 +1413,6 @@
                 }
 
             } catch (err) {
-                console.error(err);
                 showToast('Ошибка сети при сохранении');
             }
         }
@@ -1458,7 +1425,6 @@
                     .eq('id', rideId);
 
                 if (error) {
-                    console.error('Supabase delete error:', error);
                     showToast('Ошибка при удалении поездки');
                     return;
                 }
@@ -1471,7 +1437,6 @@
                 }
 
             } catch (err) {
-                console.error(err);
                 showToast('Ошибка соединения');
             }
         }
@@ -1509,10 +1474,9 @@
                     const { error } = await query;
 
                     if (error) {
-                        console.error('Supabase profile update error:', error);
                         showToast('Ошибка при синхронизации поездок в базе');
                     } else {
-                        showToast('Профиль и все ваши опубликованные поездки обновлены!');
+                        showToast('Профиль обновлен!');
                     }
 
                     await fetchMyRidesFromSupabase();
@@ -1520,7 +1484,6 @@
                         filterRides();
                     }
                 } catch (err) {
-                    console.error('Error updating rides for profile:', err);
                     showToast('Ошибка соединения при сохранении профиля');
                 }
             } else {
@@ -1585,7 +1548,7 @@
         function openChatModal() {
             if (!activeChat) return;
 
-            document.getElementById('chat-header-avatar').src = activeChat.recipientAvatar;
+            document.getElementById('chat-header-avatar').src = activeChat.recipientAvatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80';
             document.getElementById('chat-header-name').innerText = activeChat.recipientName;
             document.getElementById('chat-header-route').innerText = activeChat.routeText;
 
@@ -1667,17 +1630,7 @@
                     .eq('ride_id', activeChat.rideId)
                     .order('created_at', { ascending: true });
 
-                if (error) {
-                    console.error('Supabase fetch messages error:', error);
-                    container.innerHTML = `
-                        <div class="text-center py-6 text-slate-400 text-xs">
-                            Начни общение первым! Укажите удобное место встречи или вопросы водителю.
-                        </div>
-                    `;
-                    return;
-                }
-
-                if (!data || data.length === 0) {
+                if (error || !data || data.length === 0) {
                     container.innerHTML = `
                         <div class="text-center py-8 text-slate-400 text-xs px-4">
                             Сообщений пока нет. Напишите водителю, чтобы договориться о деталях поездки!
@@ -1736,10 +1689,10 @@
 
             const newMsg = {
                 ride_id: activeChat.rideId,
-                sender_id: currentUser.id || currentUser.name,
+                sender_id: String(currentUser.id || currentUser.name),
                 sender_name: currentUser.name,
                 sender_avatar: currentUser.avatar,
-                recipient_id: activeChat.recipientId,
+                recipient_id: String(activeChat.recipientId),
                 recipient_name: activeChat.recipientName,
                 text: text,
                 created_at: new Date().toISOString()
@@ -1755,7 +1708,6 @@
                 if (error) {
                     console.error('Supabase send message error:', error);
                     showToast('Ошибка при отправке сообщения');
-                    return;
                 }
 
             } catch (err) {
@@ -1790,7 +1742,7 @@
             `;
 
             try {
-                let myId = currentUser.id || currentUser.name;
+                let myId = String(currentUser.id || currentUser.name);
                 const { data, error } = await supabaseClient
                     .from('messages')
                     .select('*')
@@ -1828,19 +1780,12 @@
                 data.forEach(msg => {
                     const ride = ridesMap.get(msg.ride_id);
                     let isExpired = false;
-                    let daysPassed = 0;
 
                     if (ride && ride.date && ride.time) {
                         const rideDateTime = new Date(`${ride.date}T${ride.time}`);
                         if (rideDateTime < now) {
                             isExpired = true;
-                            daysPassed = (now - rideDateTime) / (1000 * 60 * 60 * 24);
                         }
-                    }
-
-                    if (daysPassed > 5) {
-                        supabaseClient.from('messages').delete().eq('ride_id', msg.ride_id).then(() => {});
-                        return;
                     }
 
                     const isMySender = (String(msg.sender_id) === String(currentUser.id) || msg.sender_name === currentUser.name);
@@ -2004,7 +1949,6 @@
             });
 
             const route = [from, ...stops, to];
-
             const finalPhone = phone || currentUser.phone;
 
             try {
@@ -2020,12 +1964,12 @@
                         seats: seats,
                         phone: finalPhone,
                         comment: comment,
-                        user_id: currentUser.id || currentUser.name
+                        user_id: String(currentUser.id || currentUser.name)
                     }]);
 
                 if (error) {
                     console.error('Supabase insert error:', error);
-                    showToast('Ошибка при публикации в базу');
+                    showToast('Ошибка при публикации');
                     return;
                 }
 
@@ -2050,7 +1994,7 @@
 
             } catch (err) {
                 console.error(err);
-                showToast('Ошибка соединения при публикации');
+                showToast('Ошибка соединения');
             }
         }
 
@@ -2079,7 +2023,6 @@
                     .order('time', { ascending: true });
 
                 if (error) {
-                    console.error('Error fetching search rides:', error);
                     showToast('Ошибка поиска');
                     return;
                 }
@@ -2111,7 +2054,6 @@
                 renderRides(searchResultsRides);
 
             } catch (err) {
-                console.error(err);
                 showToast('Ошибка сети при поиске');
             }
         }
@@ -2150,7 +2092,6 @@
             }
         }
 
-        // Pull-to-refresh mechanism for "Мои поездки"
         let touchStartY = 0;
         const mainContainer = document.querySelector('main');
         const pullSpinner = document.getElementById('pull-spinner');
@@ -2185,9 +2126,9 @@
             touchStartY = 0;
         });
 
-        // Initial Load
         async function initApp() {
             syncProfileUI();
+            await initTgUserData();
             await initVkUserData();
             renderRides();
         }
