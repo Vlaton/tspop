@@ -1691,7 +1691,6 @@
                 ride_id: activeChat.rideId,
                 sender_id: String(currentUser.id || currentUser.name),
                 sender_name: currentUser.name,
-                sender_avatar: currentUser.avatar,
                 recipient_id: String(activeChat.recipientId),
                 recipient_name: activeChat.recipientName,
                 text: text,
@@ -1798,10 +1797,6 @@
                     if (ride && !isDriver) {
                         otherPartyName = ride.driver_name || otherPartyName;
                         otherPartyAvatar = ride.driver_avatar || defaultAvatar;
-                    } else if (!isMySender && msg.sender_avatar) {
-                        otherPartyAvatar = msg.sender_avatar;
-                    } else if (isMySender && msg.recipient_avatar) {
-                        otherPartyAvatar = msg.recipient_avatar;
                     }
 
                     const routeText = (ride && ride.route && ride.route.length > 0)
