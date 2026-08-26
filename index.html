@@ -107,15 +107,11 @@
         <!-- Header Bar -->
         <header class="vk-bg text-white p-3.5 sticky top-0 z-20 shadow-md flex items-center justify-between">
             <div class="flex items-center gap-2.5">
-                <!-- Custom App Logo Emblem SVG (Perfectly Aligned) -->
+                <!-- Custom App Logo Emblem SVG -->
                 <svg class="w-7 h-7 text-white fill-current shrink-0 block" viewBox="0 10 100 60" xmlns="http://www.w3.org/2000/svg">
-                    <!-- Left Location Pin -->
                     <path d="M 20,12 C 11,12 4,19 4,28 C 4,42 20,68 20,68 C 20,68 36,42 36,28 C 36,19 29,12 20,12 Z M 20,35 C 16.1,35 13,31.9 13,28 C 13,24.1 16.1,21 20,21 C 23.9,21 27,24.1 27,28 C 27,31.9 23.9,35 20,35 Z" />
-                    <!-- Right Location Pin -->
                     <path d="M 80,12 C 71,12 64,19 64,28 C 64,42 80,68 80,68 C 80,68 96,42 96,28 C 96,19 89,12 80,12 Z M 80,35 C 76.1,35 73,31.9 73,28 C 73,24.1 16.1,21 80,21 C 83.9,21 87,24.1 87,28 C 87,31.9 83.9,35 80,35 Z" />
-                    <!-- Top Arrow (Rightward ->) -->
                     <path d="M 38,24 L 52,24 L 52,18 L 64,28 L 52,38 L 52,32 L 38,32 Z" />
-                    <!-- Bottom Arrow (Leftward <-) -->
                     <path d="M 62,50 L 48,50 L 48,44 L 36,54 L 48,64 L 48,58 L 62,58 Z" />
                 </svg>
                 <h1 class="text-lg font-bold tracking-wide leading-none flex items-center">Туда-Сюда</h1>
@@ -278,6 +274,7 @@
 
         </main>
 
+        <!-- Ride Detail Modal -->
         <div id="detail-modal" class="modal-overlay" onclick="closeModalOnBackdrop(event)">
             <div class="modal-sheet relative space-y-4" onclick="event.stopPropagation()">
                 <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-1"></div>
@@ -354,6 +351,7 @@
             </div>
         </div>
 
+        <!-- Chat Modal Sheet -->
         <div id="chat-modal" class="modal-overlay" onclick="closeChatModalOnBackdrop(event)">
             <div class="chat-sheet relative" onclick="event.stopPropagation()">
                 
@@ -377,7 +375,7 @@
                     <!-- Messages populated dynamically -->
                 </div>
 
-                <!-- Message Input Bar (Dynamic for expired rides) -->
+                <!-- Message Input Bar -->
                 <div id="chat-input-bar" class="pt-2 border-t border-slate-100 flex items-center gap-2">
                     <input type="text" id="chat-input-text" placeholder="Напишите сообщение..." onkeydown="if(event.key==='Enter') sendChatMessage()" class="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500 transition">
                     <button onclick="sendChatMessage()" class="vk-bg text-white w-10 h-10 rounded-xl flex items-center justify-center hover:opacity-90 active:scale-95 transition">
@@ -388,6 +386,7 @@
             </div>
         </div>
 
+        <!-- Login Modal -->
         <div id="login-modal" class="modal-overlay" onclick="closeLoginModalOnBackdrop(event)">
             <div class="modal-sheet relative space-y-4" onclick="event.stopPropagation()">
                 <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-1"></div>
@@ -405,17 +404,14 @@
                 </div>
 
                 <div class="space-y-2.5 pt-2">
-                    <!-- VK Authorization Button -->
                     <button onclick="performDemoLogin('vk')" class="w-full vk-bg text-white py-3 rounded-xl font-medium text-xs shadow-md flex items-center justify-center gap-2 hover:opacity-95 transition">
                         <i class="fa-brands fa-vk text-base"></i> Войти через VK ID
                     </button>
                     
-                    <!-- Telegram Authorization Button -->
                     <button onclick="loginWithTelegram()" class="w-full tg-bg text-white py-3 rounded-xl font-medium text-xs shadow-md flex items-center justify-center gap-2 hover:opacity-95 transition">
                         <i class="fa-brands fa-telegram text-base"></i> Войти через Telegram
                     </button>
 
-                    <!-- Phone Authorization Button -->
                     <button onclick="performDemoLogin('phone')" class="w-full bg-slate-100 text-slate-700 hover:bg-slate-200 py-3 rounded-xl font-medium text-xs flex items-center justify-center gap-2 transition border border-slate-200">
                         <i class="fa-solid fa-mobile-screen-button text-slate-500"></i> по Номеру телефона
                     </button>
@@ -423,6 +419,7 @@
             </div>
         </div>
 
+        <!-- Edit Ride Modal -->
         <div id="edit-ride-modal" class="modal-overlay" onclick="closeEditRideModalOnBackdrop(event)">
             <div class="modal-sheet relative space-y-4" onclick="event.stopPropagation()">
                 <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-1"></div>
@@ -500,6 +497,7 @@
             </div>
         </div>
 
+        <!-- Profile Modal -->
         <div id="profile-modal" class="modal-overlay" onclick="closeProfileModalOnBackdrop(event)">
             <div class="modal-sheet relative space-y-4" onclick="event.stopPropagation()">
                 <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-1"></div>
@@ -540,7 +538,6 @@
                         <i class="fa-regular fa-bell text-indigo-600"></i> Разрешить Push-уведомления
                     </button>
 
-                    <!-- LOGOUT BUTTON -->
                     <button onclick="logoutAccount()" class="w-full bg-rose-50 hover:bg-rose-100 text-rose-600 py-2 rounded-xl font-medium text-xs transition flex items-center justify-center gap-2 border border-rose-200 mt-2">
                         <i class="fa-solid fa-right-from-bracket text-xs"></i> Выйти из аккаунта
                     </button>
@@ -549,12 +546,13 @@
             </div>
         </div>
 
-        <!-- Custom Toast Notification -->
+        <!-- Toast Notification -->
         <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-4 py-2.5 rounded-xl shadow-xl z-50 hidden opacity-0 transition-opacity duration-300 flex items-center gap-2 max-w-[90%]">
             <i class="fa-solid fa-circle-info text-indigo-400"></i>
             <span id="toast-text" class="truncate">Уведомление</span>
         </div>
 
+        <!-- Bottom Navigation -->
         <nav class="fixed bottom-0 w-full max-w-md bg-white border-t border-slate-200 flex justify-around py-2 z-30">
             <button onclick="switchTab('search')" id="nav-search" class="flex flex-col items-center gap-1 active-tab w-1/4">
                 <i class="fa-solid fa-magnifying-glass text-lg"></i>
@@ -627,12 +625,10 @@
             }
         }
 
-        // VK Bridge Initialization
         if (typeof vkBridge !== 'undefined') {
             vkBridge.send('VKWebAppInit').catch(e => console.log('VK Bridge error:', e));
         }
 
-        // Supabase Initialization
         const SUPABASE_URL = "https://oqyjirsmbxjxahciomez.supabase.co";
         const SUPABASE_KEY = "sb_publishable_e-P2bnSM9fOAqg6U8SZohg_UIf4OFGz";
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -654,7 +650,7 @@
                     .upsert(profilePayload, { onConflict: 'id' });
 
                 if (error) {
-                    console.warn('Note: profiles table sync error (ensure table created in Supabase):', error);
+                    console.warn('Profiles table sync warning:', error);
                 }
             } catch (e) {
                 console.warn('Error syncing profile:', e);
@@ -728,7 +724,6 @@
             }
         }
 
-        // Background Message Polling (Guarantees messages arrive even if WebSockets drop)
         function startMessagesPolling() {
             if (pollingIntervalTimer) clearInterval(pollingIntervalTimer);
             
@@ -744,7 +739,6 @@
             }, 4000);
         }
 
-        // Realtime Messages Stream
         function initRealtimeMessages() {
             if (window.messagesChannel) {
                 try {
@@ -752,10 +746,7 @@
                 } catch(e) {}
             }
 
-            if (typeof WebSocket === 'undefined') {
-                console.warn('WebSockets not supported in environment.');
-                return;
-            }
+            if (typeof WebSocket === 'undefined') return;
 
             try {
                 window.messagesChannel = supabaseClient
@@ -801,7 +792,7 @@
                     })
                     .subscribe((status, err) => {
                         if (err || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-                            console.warn('Realtime subscription error/timeout');
+                            console.warn('Realtime subscription issue');
                         }
                     });
             } catch (err) {
@@ -867,77 +858,14 @@
                     query = query.eq('driver_name', currentUser.name);
                 }
 
-                const { data, error } = await query;
-
+                const { data } = await query;
                 if (data && data.length > 0 && data[0].phone) {
                     currentUser.phone = data[0].phone;
                     localStorage.setItem('ts_user_phone', data[0].phone);
                 }
             } catch (err) {
-                console.error('Error fetching phone from DB:', err);
+                console.error('Error fetching phone:', err);
             }
-        }
-
-        async function fetchMyRidesFromSupabase() {
-            if (!isAuthenticated) {
-                renderMyRides();
-                return;
-            }
-
-            try {
-                let query = supabaseClient.from('rides').select('*');
-                if (currentUser.id) {
-                    query = query.or(`user_id.eq.${currentUser.id},driver_name.eq.${currentUser.name}`);
-                } else {
-                    query = query.eq('driver_name', currentUser.name);
-                }
-
-                const { data, error } = await query.order('date', { ascending: true }).order('time', { ascending: true });
-
-                if (error) {
-                    console.error('Supabase fetch my rides error:', error);
-                    return;
-                }
-
-                if (data) {
-                    myRidesList = data.map(r => ({
-                        id: r.id,
-                        driverName: r.driver_name,
-                        driverAvatar: r.driver_avatar || currentUser.avatar,
-                        route: r.route || [],
-                        date: r.date,
-                        time: r.time,
-                        price: r.price,
-                        seats: r.seats,
-                        phone: r.phone,
-                        comment: r.comment,
-                        userId: r.user_id
-                    }));
-                }
-                renderMyRides();
-            } catch (err) {
-                console.error('Network error during my rides fetch:', err);
-            }
-        }
-
-        function isRideOwner(ride) {
-            if (!isAuthenticated) return false;
-            return (ride.userId === currentUser.id || ride.driverName === currentUser.name || ride.userId === currentUser.name);
-        }
-
-        function isRideInFuture(ride) {
-            const now = new Date();
-            const rideDateTime = new Date(`${ride.date}T${ride.time}`);
-            return rideDateTime >= now;
-        }
-
-        function isRideWithin30DaysPast(ride) {
-            const now = new Date();
-            const rideDateTime = new Date(`${ride.date}T${ride.time}`);
-            if (rideDateTime >= now) return false;
-
-            const daysDiff = (now - rideDateTime) / (1000 * 60 * 60 * 24);
-            return daysDiff <= 31;
         }
 
         function syncProfileUI() {
@@ -1071,7 +999,6 @@
                 }
             }
 
-            // Default Clean Demo Fallback for standard browsers
             isAuthenticated = true;
             authProvider = type;
             currentUser.id = "user_vlad_" + Math.floor(Math.random() * 1000);
@@ -1089,6 +1016,68 @@
             if (activeSelectedRide) openRideDetail(activeSelectedRide.id);
             await fetchMyRidesFromSupabase();
             await fetchUserConversations(true);
+        }
+
+        async function fetchMyRidesFromSupabase() {
+            if (!isAuthenticated) {
+                renderMyRides();
+                return;
+            }
+
+            try {
+                let query = supabaseClient.from('rides').select('*');
+                if (currentUser.id) {
+                    query = query.or(`user_id.eq.${currentUser.id},driver_name.eq.${currentUser.name}`);
+                } else {
+                    query = query.eq('driver_name', currentUser.name);
+                }
+
+                const { data, error } = await query.order('date', { ascending: true }).order('time', { ascending: true });
+
+                if (error) {
+                    console.error('Supabase fetch my rides error:', error);
+                    return;
+                }
+
+                if (data) {
+                    myRidesList = data.map(r => ({
+                        id: r.id,
+                        driverName: r.driver_name,
+                        driverAvatar: r.driver_avatar || currentUser.avatar,
+                        route: r.route || [],
+                        date: r.date,
+                        time: r.time,
+                        price: r.price,
+                        seats: r.seats,
+                        phone: r.phone,
+                        comment: r.comment,
+                        userId: r.user_id
+                    }));
+                }
+                renderMyRides();
+            } catch (err) {
+                console.error('Network error during my rides fetch:', err);
+            }
+        }
+
+        function isRideOwner(ride) {
+            if (!isAuthenticated) return false;
+            return (ride.userId === currentUser.id || ride.driverName === currentUser.name || ride.userId === currentUser.name);
+        }
+
+        function isRideInFuture(ride) {
+            const now = new Date();
+            const rideDateTime = new Date(`${ride.date}T${ride.time}`);
+            return rideDateTime >= now;
+        }
+
+        function isRideWithin30DaysPast(ride) {
+            const now = new Date();
+            const rideDateTime = new Date(`${ride.date}T${ride.time}`);
+            if (rideDateTime >= now) return false;
+
+            const daysDiff = (now - rideDateTime) / (1000 * 60 * 60 * 24);
+            return daysDiff <= 31;
         }
 
         function renderRides(itemsToRender = null) {
@@ -1614,7 +1603,9 @@
 
             document.getElementById('chat-header-avatar').src = activeChat.recipientAvatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80';
             document.getElementById('chat-header-name').innerText = activeChat.recipientName;
-            document.getElementById('chat-header-route').innerText = activeChat.routeText;
+
+            const isSupport = (activeChat.rideId === null || activeChat.rideId === undefined || activeChat.rideId === 'null');
+            document.getElementById('chat-header-route').innerText = isSupport ? 'Служба поддержки сервиса' : activeChat.routeText;
 
             const inputBar = document.getElementById('chat-input-bar');
 
@@ -1690,11 +1681,15 @@
             }
 
             try {
-                const { data, error } = await supabaseClient
-                    .from('messages')
-                    .select('*')
-                    .eq('ride_id', activeChat.rideId)
-                    .order('created_at', { ascending: true });
+                let query = supabaseClient.from('messages').select('*');
+                
+                if (activeChat.rideId === null || activeChat.rideId === undefined || activeChat.rideId === 'null') {
+                    query = query.is('ride_id', null);
+                } else {
+                    query = query.eq('ride_id', activeChat.rideId);
+                }
+
+                const { data, error } = await query.order('created_at', { ascending: true });
 
                 if (error || !data || data.length === 0) {
                     if (!isSilent) {
@@ -1714,7 +1709,7 @@
 
                 container.innerHTML = data.map(msg => {
                     const isMyMsg = (String(msg.sender_id) === String(currentUser.id) || msg.sender_name === currentUser.name);
-                    const msgTime = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    const msgTime = new Date(msg.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
                     if (isMyMsg) {
                         return `
@@ -1755,13 +1750,15 @@
             if (!input) return;
 
             const text = input.value.trim();
-
             if (!text || !activeChat || !isAuthenticated) return;
 
             input.value = '';
 
+            const isSupport = (activeChat.rideId === null || activeChat.rideId === undefined || activeChat.rideId === 'null');
+            const rideIdVal = isSupport ? null : activeChat.rideId;
+
             const newMsg = {
-                ride_id: activeChat.rideId,
+                ride_id: rideIdVal,
                 sender_id: String(currentUser.id || currentUser.name),
                 sender_name: currentUser.name,
                 recipient_id: String(activeChat.recipientId),
@@ -1783,7 +1780,6 @@
                     console.error('Supabase send message error:', error);
                     showToast('Ошибка при отправке сообщения');
                 }
-
             } catch (err) {
                 console.error(err);
                 showToast('Ошибка соединения');
@@ -1840,7 +1836,7 @@
                     return;
                 }
 
-                const rideIds = [...new Set(data.map(m => m.ride_id))];
+                const rideIds = [...new Set(data.map(m => m.ride_id).filter(id => id !== null && id !== undefined && id !== 'null'))];
                 const ridesMap = new Map();
 
                 if (rideIds.length > 0) {
@@ -1856,12 +1852,11 @@
 
                 const convMap = new Map();
                 const now = new Date();
-
-                // Reset unread counts before computing
                 unreadMap = {};
 
                 data.forEach(msg => {
-                    const ride = ridesMap.get(msg.ride_id);
+                    const isSupportMsg = (msg.ride_id === null || msg.ride_id === undefined || msg.ride_id === 'null');
+                    const ride = !isSupportMsg ? ridesMap.get(msg.ride_id) : null;
                     let isExpired = false;
 
                     if (ride && ride.date && ride.time) {
@@ -1878,7 +1873,10 @@
                     let defaultAvatar = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80";
                     let otherPartyAvatar = defaultAvatar;
 
-                    if (ride && !isDriver) {
+                    if (isSupportMsg) {
+                        otherPartyName = 'Служба поддержки Туда-Сюда';
+                        otherPartyAvatar = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80';
+                    } else if (ride && !isDriver) {
                         otherPartyName = ride.driver_name || otherPartyName;
                         otherPartyAvatar = ride.driver_avatar || defaultAvatar;
                     }
@@ -1886,16 +1884,17 @@
                     const convKey = `${msg.ride_id}_${otherPartyName}`;
                     const lastReadTime = getConversationLastRead(convKey);
 
-                    // Track unread status: if message is incoming and created after lastReadTime
                     if (!isMySender) {
                         if (!lastReadTime || new Date(msg.created_at) > new Date(lastReadTime)) {
                             unreadMap[convKey] = (unreadMap[convKey] || 0) + 1;
                         }
                     }
 
-                    const routeText = (ride && ride.route && ride.route.length > 0)
-                        ? ride.route.map(item => parseStop(item).name).join(' ➔ ')
-                        : `Поездка №${msg.ride_id}`;
+                    const routeText = isSupportMsg
+                        ? 'Служба поддержки сервиса'
+                        : ((ride && ride.route && ride.route.length > 0)
+                            ? ride.route.map(item => parseStop(item).name).join(' ➔ ')
+                            : `Поездка №${msg.ride_id}`);
 
                     if (!convMap.has(convKey)) {
                         convMap.set(convKey, {
@@ -1913,23 +1912,8 @@
                     }
                 });
 
+                userConversations = Array.from(convMap.values());
                 updateUnreadBadgeUI();
-
-                userConversations = Array.from(convMap.values()).sort((a, b) => 
-                    new Date(b.lastTime) - new Date(a.lastTime)
-                );
-
-                if (userConversations.length === 0) {
-                    if (!isSilent) {
-                        container.innerHTML = `
-                            <div class="text-center py-10 bg-white rounded-2xl border border-slate-100 space-y-2">
-                                <i class="fa-regular fa-comments text-3xl text-slate-300"></i>
-                                <p class="text-xs font-medium text-slate-600">У вас пока нет активных чатов</p>
-                            </div>
-                        `;
-                    }
-                    return;
-                }
 
                 container.innerHTML = userConversations.map((conv, idx) => {
                     const formattedTime = new Date(conv.lastTime).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
