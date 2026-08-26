@@ -1682,9 +1682,11 @@
 
             try {
                 let query = supabaseClient.from('messages').select('*');
-                
+                let myId = String(currentUser.id || currentUser.name);
+
                 if (activeChat.rideId === null || activeChat.rideId === undefined || activeChat.rideId === 'null') {
-                    query = query.is('ride_id', null);
+                    // System Support messages MUST be strictly isolated to current user ONLY
+                    query = query.is('ride_id', null).or(`sender_id.eq.${myId},recipient_id.eq.${myId},sender_name.eq.${currentUser.name},recipient_name.eq.${currentUser.name}`);
                 } else {
                     query = query.eq('ride_id', activeChat.rideId);
                 }
