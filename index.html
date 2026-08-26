@@ -580,6 +580,53 @@
     </div>
 
     <script>
+        // Global State Variables Initialization
+        let isAuthenticated = false;
+        let authProvider = 'none'; // 'vk', 'telegram', 'phone', 'demo'
+        let currentUser = {
+            id: null,
+            name: "Пользователь",
+            avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80",
+            phone: ""
+        };
+
+        // Restore active user session from local storage if available
+        const savedSessionStr = localStorage.getItem('ts_user_session');
+        if (savedSessionStr) {
+            try {
+                const parsedSession = JSON.parse(savedSessionStr);
+                if (parsedSession && parsedSession.user) {
+                    isAuthenticated = true;
+                    authProvider = parsedSession.provider || 'demo';
+                    currentUser = parsedSession.user;
+                }
+            } catch (e) {
+                console.warn('Session parse error:', e);
+            }
+        }
+
+        let unreadMap = {};
+        let pollingIntervalTimer = null;
+        let searchResultsRides = [];
+        let myRidesList = [];
+        let userConversations = [];
+        let activeChat = null;
+        let activeSelectedRide = null;
+        let isFilterActive = false;
+        const today = new Date().toISOString().split('T')[0];
+
+        function getConversationLastRead(convKey) {
+            return localStorage.getItem(`ts_read_${convKey}`) || null;
+        }
+
+        function setConversationLastRead(convKey) {
+            localStorage.setItem(`ts_read_${convKey}`, new Date().toISOString());
+            if (unreadMap[convKey]) {
+                delete unreadMap[convKey];
+                updateUnreadBadgeUI();
+            }
+        }
+
         // VK Bridge Initialization
         if (typeof vkBridge !== 'undefined') {
             vkBridge.send('VKWebAppInit').catch(e => console.log('VK Bridge error:', e));
@@ -590,38 +637,29 @@
         const SUPABASE_KEY = "sb_publishable_e-P2bnSM9fOAqg6U8SZohg_UIf4OFGz";
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('search-date').value = today;
-        document.getElementById('pub-date').value = today;
+        async function syncUserProfileToDatabase() {
+            if (!isAuthenticated || !currentUser || !currentUser.id) return;
+            try {
+                const profilePayload = {
+                    id: String(currentUser.id),
+                    full_name: currentUser.name || 'Пользователь',
+                    avatar_url: currentUser.avatar || '',
+                    phone: currentUser.phone || '',
+                    auth_provider: authProvider || 'vk',
+                    last_active_at: new Date().toISOString()
+                };
 
-        let activeSelectedRide = null;
-        let isFilterActive = false;
+                const { error } = await supabaseClient
+                    .from('profiles')
+                    .upsert(profilePayload, { onConflict: 'id' });
 
-        // Unread Badge State Per Conversation map
-        let unreadMap = {};
-
-        // Restore auth session from localStorage if present
-        let savedAuth = localStorage.getItem('ts_user_session');
-        let initialUser = savedAuth ? JSON.parse(savedAuth) : null;
-
-        let isAuthenticated = initialUser ? true : false;
-        let authProvider = initialUser ? initialUser.provider : 'none'; // 'vk', 'telegram', 'phone'
-        let currentUser = initialUser ? initialUser.user : {
-            id: null,
-            name: "Пользователь",
-            avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80",
-            phone: localStorage.getItem('ts_user_phone') || ""
-        };
-
-        // Active Chat State
-        let activeChat = null;
-        let pollingIntervalTimer = null;
-        let activeChatRefreshTimer = null;
-
-        // Targeted local stores
-        let searchResultsRides = [];
-        let myRidesList = [];
-        let userConversations = [];
+                if (error) {
+                    console.warn('Note: profiles table sync error (ensure table created in Supabase):', error);
+                }
+            } catch (e) {
+                console.warn('Error syncing profile:', e);
+            }
+        }
 
         function saveUserSession() {
             if (isAuthenticated) {
@@ -629,6 +667,7 @@
                     provider: authProvider,
                     user: currentUser
                 }));
+                syncUserProfileToDatabase();
             } else {
                 localStorage.removeItem('ts_user_session');
             }
@@ -693,21 +732,16 @@
         function startMessagesPolling() {
             if (pollingIntervalTimer) clearInterval(pollingIntervalTimer);
             
-            // Background check for new conversations & unread counts every 5 seconds
             pollingIntervalTimer = setInterval(async () => {
                 if (!isAuthenticated) return;
                 
-                // If chat modal is open, refresh active chat messages
                 const isChatModalOpen = document.getElementById('chat-modal').classList.contains('open');
                 if (isChatModalOpen && activeChat) {
                     await fetchChatMessages(true);
                 }
 
-                // Refresh unread counts / list if on chats tab
-                if (!document.getElementById('tab-chats').classList.contains('hidden')) {
-                    await fetchUserConversations(true);
-                }
-            }, 5000);
+                await fetchUserConversations(true);
+            }, 4000);
         }
 
         // Realtime Messages Stream
@@ -751,6 +785,7 @@
                             
                             if (isChatModalOpen && activeChat && String(activeChat.rideId) === String(newMsg.ride_id)) {
                                 appendChatMessage(newMsg);
+                                setConversationLastRead(`${newMsg.ride_id}_${senderName}`);
                                 triggerVkHaptic();
                             } else {
                                 const convKey = `${newMsg.ride_id}_${senderName}`;
@@ -760,9 +795,7 @@
                                 showToast(`💬 ${senderName}: "${newMsg.text.length > 25 ? newMsg.text.substring(0, 25) + '...' : newMsg.text}"`);
                                 triggerVkHaptic();
 
-                                if (!document.getElementById('tab-chats').classList.contains('hidden')) {
-                                    fetchUserConversations(true);
-                                }
+                                fetchUserConversations(true);
                             }
                         }
                     })
@@ -784,7 +817,7 @@
                 authProvider = 'telegram';
                 currentUser.id = `tg_${tgUser.id}`;
                 currentUser.name = [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ');
-                currentUser.avatar = tgUser.photo_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${tgUser.id}`;
+                currentUser.avatar = tgUser.photo_url || `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80`;
                 currentUser.phone = localStorage.getItem('ts_user_phone') || "";
 
                 saveUserSession();
@@ -792,6 +825,7 @@
                 initRealtimeMessages();
                 startMessagesPolling();
                 await fetchMyRidesFromSupabase();
+                await fetchUserConversations(true);
             }
         }
 
@@ -815,6 +849,7 @@
                         syncProfileUI();
                         initRealtimeMessages();
                         startMessagesPolling();
+                        await fetchUserConversations(true);
                     }
                 } catch (e) {
                     console.log('Outside VK environment or permission denied:', e);
@@ -973,6 +1008,8 @@
                 phone: ""
             };
 
+            unreadMap = {};
+            updateUnreadBadgeUI();
             saveUserSession();
             syncProfileUI();
             closeProfileModal();
@@ -994,7 +1031,6 @@
                 return;
             }
 
-            // Outside Telegram Mini App: Open Telegram Bot
             showToast('Переход в Telegram...');
             window.open('https://t.me/ts_poezdki_bot', '_blank');
         }
@@ -1026,6 +1062,7 @@
                             showToast(`Добро пожаловать, ${user.first_name}!`);
                             if (activeSelectedRide) openRideDetail(activeSelectedRide.id);
                             await fetchMyRidesFromSupabase();
+                            await fetchUserConversations(true);
                             return;
                         }
                     } catch (e) {
@@ -1051,6 +1088,7 @@
             showToast('Успешный вход!');
             if (activeSelectedRide) openRideDetail(activeSelectedRide.id);
             await fetchMyRidesFromSupabase();
+            await fetchUserConversations(true);
         }
 
         function renderRides(itemsToRender = null) {
@@ -1484,6 +1522,7 @@
 
             localStorage.setItem('ts_user_phone', newPhone);
             saveUserSession();
+            syncUserProfileToDatabase();
 
             if (isAuthenticated) {
                 try {
@@ -1564,10 +1603,7 @@
             };
 
             const convKey = `${activeSelectedRide.id}_${activeSelectedRide.driverName}`;
-            if (unreadMap[convKey]) {
-                delete unreadMap[convKey];
-                updateUnreadBadgeUI();
-            }
+            setConversationLastRead(convKey);
 
             closeModal();
             openChatModal();
@@ -1673,7 +1709,7 @@
 
                 const currentCount = container.querySelectorAll('.bg-indigo-600, .bg-slate-100').length;
                 if (isSilent && data.length === currentCount) {
-                    return; // No new messages, stay unchanged
+                    return;
                 }
 
                 container.innerHTML = data.map(msg => {
@@ -1735,6 +1771,8 @@
             };
 
             appendChatMessage(newMsg);
+            const convKey = `${activeChat.rideId}_${activeChat.recipientName}`;
+            setConversationLastRead(convKey);
 
             try {
                 const { error } = await supabaseClient
@@ -1797,6 +1835,8 @@
                             </div>
                         `;
                     }
+                    unreadMap = {};
+                    updateUnreadBadgeUI();
                     return;
                 }
 
@@ -1816,6 +1856,9 @@
 
                 const convMap = new Map();
                 const now = new Date();
+
+                // Reset unread counts before computing
+                unreadMap = {};
 
                 data.forEach(msg => {
                     const ride = ridesMap.get(msg.ride_id);
@@ -1840,11 +1883,19 @@
                         otherPartyAvatar = ride.driver_avatar || defaultAvatar;
                     }
 
+                    const convKey = `${msg.ride_id}_${otherPartyName}`;
+                    const lastReadTime = getConversationLastRead(convKey);
+
+                    // Track unread status: if message is incoming and created after lastReadTime
+                    if (!isMySender) {
+                        if (!lastReadTime || new Date(msg.created_at) > new Date(lastReadTime)) {
+                            unreadMap[convKey] = (unreadMap[convKey] || 0) + 1;
+                        }
+                    }
+
                     const routeText = (ride && ride.route && ride.route.length > 0)
                         ? ride.route.map(item => parseStop(item).name).join(' ➔ ')
                         : `Поездка №${msg.ride_id}`;
-
-                    const convKey = `${msg.ride_id}_${otherPartyName}`;
 
                     if (!convMap.has(convKey)) {
                         convMap.set(convKey, {
@@ -1861,6 +1912,8 @@
                         });
                     }
                 });
+
+                updateUnreadBadgeUI();
 
                 userConversations = Array.from(convMap.values()).sort((a, b) => 
                     new Date(b.lastTime) - new Date(a.lastTime)
@@ -1883,16 +1936,15 @@
                     const unreadCount = unreadMap[conv.convKey] || 0;
 
                     return `
-                        <div onclick="openExistingChatByIndex(${idx})" class="bg-white p-3.5 rounded-2xl border ${unreadCount > 0 ? 'border-indigo-300 bg-indigo-50/20' : 'border-slate-100'} shadow-sm flex items-center justify-between gap-3 hover:border-indigo-200 active:scale-[0.99] transition cursor-pointer relative">
+                        <div onclick="openExistingChatByIndex(${idx})" class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-3 hover:border-indigo-200 active:scale-[0.99] transition cursor-pointer relative">
                             <div class="flex items-center gap-3">
                                 <div class="relative">
                                     <img src="${conv.otherPartyAvatar}" alt="${escapeHtml(conv.otherPartyName)}" class="w-10 h-10 rounded-full object-cover border border-slate-100 shadow-sm" onerror="this.src='https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80'">
-                                    ${unreadCount > 0 ? `<span class="absolute -top-1 -right-1 bg-rose-500 text-white text-[9px] font-bold rounded-full h-4 min-w-[16px] px-1 flex items-center justify-center border border-white shadow-sm animate-pulse">${unreadCount}</span>` : ''}
+                                    ${unreadCount > 0 ? `<span class="absolute -top-1 -right-1 bg-rose-500 text-white text-[9px] font-bold rounded-full h-4 min-w-[16px] px-1 flex items-center justify-center border border-white shadow-sm animate-pulse">${unreadCount > 99 ? '99+' : unreadCount}</span>` : ''}
                                 </div>
                                 <div class="space-y-0.5 max-w-[180px]">
                                     <div class="flex items-center gap-1.5">
                                         <h4 class="font-bold text-slate-800 text-xs truncate">${escapeHtml(conv.otherPartyName)}</h4>
-                                        ${unreadCount > 0 ? `<span class="text-[9px] bg-rose-100 text-rose-600 px-1.5 py-0.2 rounded font-bold">Новые</span>` : ''}
                                         ${conv.isExpired ? `<span class="text-[9px] bg-amber-100 text-amber-700 px-1.5 py-0.2 rounded font-medium">Завершён</span>` : ''}
                                     </div>
                                     <p class="text-[11px] ${unreadCount > 0 ? 'text-slate-800 font-bold' : 'text-slate-500 font-medium'} truncate">
@@ -1916,10 +1968,7 @@
             const conv = userConversations[index];
             if (!conv) return;
 
-            if (unreadMap[conv.convKey]) {
-                delete unreadMap[conv.convKey];
-                updateUnreadBadgeUI();
-            }
+            setConversationLastRead(conv.convKey);
 
             activeChat = {
                 rideId: conv.rideId,
@@ -2171,6 +2220,7 @@
             if (isAuthenticated) {
                 initRealtimeMessages();
                 startMessagesPolling();
+                await fetchUserConversations(true);
             }
             renderRides();
         }
