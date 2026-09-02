@@ -569,6 +569,26 @@
     </div>
 
     <script>
+        // Prevent sandbox WebSocket SecurityErrors from bubbling up to global handler
+        window.addEventListener('error', function(event) {
+            if (event && event.message && (event.message.includes('WebSocket') || event.message.includes('SecurityError'))) {
+                event.preventDefault();
+                return true;
+            }
+        });
+
+        // Test if WebSockets are permitted in the current environment (e.g. Canvas sandbox)
+        let isWebSocketAllowed = false;
+        try {
+            if (typeof WebSocket !== 'undefined') {
+                const testSocket = new WebSocket('wss://echo.websocket.org');
+                testSocket.close();
+                isWebSocketAllowed = true;
+            }
+        } catch (e) {
+            isWebSocketAllowed = false;
+        }
+
         // Global State Variables Initialization
         let isAuthenticated = false;
         let authProvider = 'none';
@@ -731,6 +751,12 @@
         }
 
         function initRealtimeMessages() {
+            if (!isWebSocketAllowed) {
+                // In sandboxed environments (like Canvas), WebSockets are restricted.
+                // startMessagesPolling() handles message syncing reliably every 4 seconds.
+                return;
+            }
+
             if (window.messagesChannel) {
                 try {
                     supabaseClient.removeChannel(window.messagesChannel);
@@ -1577,10 +1603,28 @@
 
             const shareText = `Нашёл поездку ${firstStop} ➔ ${lastStop} на ${formattedDate}`;
 
+            // Определение ID VK приложения из параметров запуска (vk_app_id)
+            const urlParams = new URLSearchParams(window.location.search);
+            const vkAppId = urlParams.get('vk_app_id') || localStorage.getItem('ts_vk_app_id') || '';
+            if (urlParams.get('vk_app_id')) {
+                localStorage.setItem('ts_vk_app_id', urlParams.get('vk_app_id'));
+            }
+
+            // Формирование нативных ссылок для каждой платформы
             let shareUrl = window.location.origin + window.location.pathname + '?ride=' + activeSelectedRide.id;
+            const isInsideVk = window.location.search.includes('vk_user_id') || (window.name && window.name.includes('vk')) || authProvider === 'vk' || Boolean(vkAppId);
+
+            if (isInsideVk && vkAppId) {
+                // Если внутри VK — формируем ссылку на VK Mini App, чтобы открывалось внутри VK
+                shareUrl = `https://vk.com/app${vkAppId}#ride=${activeSelectedRide.id}`;
+            } else if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) {
+                // Если внутри Telegram — формируем ссылку с параметром startapp
+                shareUrl = `https://t.me/ts_poezdki_bot?startapp=ride_${activeSelectedRide.id}`;
+            }
+
+            const fullMessage = `${shareText}\n${shareUrl}`;
 
             // 1. VK Mini Apps sharing
-            const isInsideVk = window.location.search.includes('vk_user_id') || (window.name && window.name.includes('vk'));
             if (typeof vkBridge !== 'undefined' && isInsideVk) {
                 vkBridge.send('VKWebAppShare', {
                     link: shareUrl,
@@ -1612,7 +1656,7 @@
                 return;
             }
 
-            // 4. Fallback: Copy link to clipboard
+            // 4. Fallback: Copy full message with text to clipboard
             fallbackShare(shareText, shareUrl);
         }
 
@@ -1620,7 +1664,7 @@
             const fullText = `${text}\n${url}`;
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(fullText).then(() => {
-                    showToast('Ссылка на поездку скопирована!');
+                    showToast('Текст и ссылка скопированы в буфер!');
                 }).catch(() => {
                     showToast('Ссылка: ' + url);
                 });
@@ -1928,10 +1972,29 @@
                     const ride = !isSupportMsg ? ridesMap.get(msg.ride_id) : null;
                     let isExpired = false;
 
-                    if (ride && ride.date && ride.time) {
-                        const rideDateTime = new Date(`${ride.date}T${ride.time}`);
-                        if (rideDateTime < now) {
+                    // Автоматическая очистка: скрывать поездки старше 5 дней, а поддержку хранить 30 дней
+                    if (!isSupportMsg) {
+                        if (ride && ride.date && ride.time) {
+                            const rideDateTime = new Date(`${ride.date}T${ride.time}`);
+                            const daysSinceFinish = (now - rideDateTime) / (1000 * 60 * 60 * 24);
+                            if (daysSinceFinish > 5) {
+                                return; // Прошло больше 5 дней — скрываем завершённую поездку
+                            }
+                            if (rideDateTime < now) {
+                                isExpired = true;
+                            }
+                        } else if (!ride) {
+                            const msgAgeDays = (now - new Date(msg.created_at)) / (1000 * 60 * 60 * 24);
+                            if (msgAgeDays > 5) {
+                                return; // Удалённая поездка старше 5 дней — скрываем
+                            }
                             isExpired = true;
+                        }
+                    } else {
+                        // Сообщения поддержки хранятся 30 дней
+                        const msgAgeDays = (now - new Date(msg.created_at)) / (1000 * 60 * 60 * 24);
+                        if (msgAgeDays > 30) {
+                            return; // Старше месяца — скрываем
                         }
                     }
 
@@ -2318,6 +2381,19 @@
             }
         }
 
+        async function autoCleanupExpiredMessages() {
+            if (!isAuthenticated) return;
+            try {
+                const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+                // Фоновая зачистка сообщений поддержки старше 30 дней
+                await supabaseClient
+                    .from('messages')
+                    .delete()
+                    .is('ride_id', null)
+                    .lt('created_at', thirtyDaysAgo);
+            } catch (e) {}
+        }
+
         async function initApp() {
             syncProfileUI();
             await initTgUserData();
@@ -2326,6 +2402,7 @@
                 initRealtimeMessages();
                 startMessagesPolling();
                 await fetchUserConversations(true);
+                autoCleanupExpiredMessages();
             }
             renderRides();
             await checkDeepLinkRide();
