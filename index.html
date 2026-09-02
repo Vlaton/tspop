@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Туда-Сюда — Попутчики</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -51,16 +51,16 @@
             border-top-left-radius: 1.5rem;
             border-top-right-radius: 1.5rem;
             padding: 1.25rem;
+            padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
             transform: translateY(100%);
             transition: transform 0.25s ease-out;
-            max-height: 85vh;
+            max-height: 88vh;
             overflow-y: auto;
             box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.15);
         }
         .modal-overlay.open .modal-sheet {
             transform: translateY(0);
         }
-
         /* Fullscreen Chat Modal Sheet */
         .chat-sheet {
             background: #ffffff;
@@ -73,6 +73,7 @@
             display: flex;
             flex-direction: column;
             padding: 1rem;
+            padding-bottom: max(1rem, env(safe-area-inset-bottom));
             transform: translateY(100%);
             transition: transform 0.25s ease-out;
             box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.2);
@@ -81,6 +82,11 @@
             transform: translateY(0);
         }
         
+        /* Safe area bottom padding for iPhone bottom navigation */
+        .safe-bottom-nav {
+            padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+        }
+
         /* Hide number input spinners completely */
         input[type=number]::-webkit-inner-spin-button,
         input[type=number]::-webkit-outer-spin-button {
@@ -90,25 +96,22 @@
         input[type=number] {
             -moz-appearance: textfield;
         }
-
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-
         #pull-spinner {
             transition: height 0.2s ease, opacity 0.2s ease;
         }
     </style>
 </head>
 <body class="flex justify-center min-h-screen bg-slate-200">
-
-    <div class="w-full max-w-md bg-white min-h-screen flex flex-col justify-between shadow-xl relative pb-20">
+    <div class="w-full max-w-md bg-white min-h-screen flex flex-col justify-between shadow-xl relative pb-24">
         
         <!-- Header Bar -->
         <header class="vk-bg text-white p-3.5 sticky top-0 z-20 shadow-md flex items-center justify-between">
             <div class="flex items-center gap-2.5">
                 <svg class="w-7 h-7 text-white fill-current shrink-0 block" viewBox="0 10 100 60" xmlns="http://www.w3.org/2000/svg">
                     <path d="M 20,12 C 11,12 4,19 4,28 C 4,42 20,68 20,68 C 20,68 36,42 36,28 C 36,19 29,12 20,12 Z M 20,35 C 16.1,35 13,31.9 13,28 C 13,24.1 16.1,21 20,21 C 23.9,21 27,24.1 27,28 C 27,31.9 23.9,35 20,35 Z" />
-                    <path d="M 80,12 C 71,12 64,19 64,28 C 64,42 80,68 80,68 C 80,68 96,42 96,28 C 96,19 89,12 80,12 Z M 80,35 C 76.1,35 73,31.9 73,28 C 73,24.1 16.1,21 80,21 C 83.9,21 87,24.1 87,28 C 87,31.9 83.9,35 80,35 Z" />
+                    <path d="M 80,12 C 71,12 64,19 64,28 C 64,42 80,68 80,68 C 80,68 96,42 96,28 C 96,19 89,12 80,12 Z M 80,35 C 76.1,35 73,31.9 73,28 C 73,24.1 76.1,21 80,21 C 83.9,21 87,24.1 87,28 C 87,31.9 83.9,35 80,35 Z" />
                     <path d="M 38,24 L 52,24 L 52,18 L 64,28 L 52,38 L 52,32 L 38,32 Z" />
                     <path d="M 62,50 L 48,50 L 48,44 L 36,54 L 48,64 L 48,58 L 62,58 Z" />
                 </svg>
@@ -122,11 +125,10 @@
             </button>
         </header>
 
+        <!-- Main Content Area -->
         <main class="flex-1 p-4 overflow-y-auto">
-
             <!-- TAB 1: SEARCH RIDES -->
             <section id="tab-search" class="space-y-4">
-                
                 <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
                     <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Поиск маршрута</h2>
                     
@@ -144,26 +146,21 @@
                             <input type="date" id="search-date" class="w-full pl-8 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500 transition text-slate-700">
                         </div>
                     </div>
-
                     <button onclick="filterRides()" class="w-full vk-bg text-white py-2.5 rounded-xl font-medium text-xs hover:opacity-95 transition shadow-md flex items-center justify-center gap-2">
                         <i class="fa-solid fa-magnifying-glass"></i> Найти поездки
                     </button>
                 </div>
-
                 <div id="filter-info" class="hidden flex justify-between items-center bg-indigo-50 text-indigo-900 text-xs px-3 py-2 rounded-lg border border-indigo-100">
                     <span id="filter-text">Показаны найденные маршруты</span>
                     <button onclick="resetFilter()" class="font-bold underline text-indigo-600">Сбросить</button>
                 </div>
-
                 <div id="feed-header-box" class="hidden flex justify-between items-center pt-1">
                     <h3 class="font-bold text-slate-800 text-sm">Доступные поездки</h3>
                     <span id="rides-count" class="text-xs text-slate-500 font-medium">Всего: 0</span>
                 </div>
-
                 <div id="rides-container" class="space-y-2.5">
                     <!-- Populated by JS -->
                 </div>
-
             </section>
 
             <!-- TAB 2: PUBLISH RIDE -->
@@ -171,23 +168,17 @@
                 <div class="bg-white p-1 space-y-4">
                     <h2 class="text-base font-bold text-slate-800">Опубликовать поездку</h2>
                     <p class="text-[11px] text-slate-500 leading-snug">Укажите маршрут поездки. Можете добавить промежуточные пункты. Пассажиры по пути смогут увидеть ваше предложение.</p>
-
                     <form id="publish-form" onsubmit="handlePublish(event)" class="space-y-3">
-                        
                         <div class="space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
                             <label class="text-xs font-semibold text-slate-600">Маршрут следования</label>
-                            
                             <input type="text" id="pub-from" required placeholder="Пункт отправления (А)" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
                             
                             <div id="stops-container" class="space-y-2"></div>
-
                             <button type="button" onclick="addStopInput()" class="text-xs text-indigo-600 font-medium flex items-center gap-1 py-1 hover:underline">
                                 <i class="fa-solid fa-plus-circle"></i> + Добавить промежуточную остановку
                             </button>
-
                             <input type="text" id="pub-to" required placeholder="Конечный пункт (В)" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
                         </div>
-
                         <div class="grid grid-cols-2 gap-2">
                             <div>
                                 <label class="text-[11px] font-semibold text-slate-600 block mb-1">Дата</label>
@@ -198,7 +189,6 @@
                                 <input type="time" id="pub-time" required class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
                             </div>
                         </div>
-
                         <div class="grid grid-cols-2 gap-2">
                             <div>
                                 <label class="text-[11px] font-semibold text-slate-600 block mb-1">Цена за весь маршрут (₽)</label>
@@ -215,17 +205,14 @@
                                 </select>
                             </div>
                         </div>
-
                         <div>
                             <label class="text-[11px] font-semibold text-slate-600 block mb-1">Телефон для связи</label>
                             <input type="tel" id="pub-phone" placeholder="+7 (900) 000-00-00" class="w-full p-2 bg-indigo-50/50 border border-indigo-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500 font-medium text-slate-800">
                         </div>
-
                         <div>
                             <label class="text-[11px] font-semibold text-slate-600 block mb-1">Комментарий</label>
                             <textarea id="pub-comment" rows="2" placeholder="Место встречи, условия багажа, детское кресло..." class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500"></textarea>
                         </div>
-
                         <button type="submit" class="w-full vk-bg text-white py-2.5 rounded-xl font-medium text-xs hover:opacity-95 transition shadow-md">
                             Опубликовать поездку
                         </button>
@@ -237,11 +224,10 @@
             <section id="tab-chats" class="space-y-4 hidden">
                 <div class="flex justify-between items-center">
                     <h2 class="text-base font-bold text-slate-800">Сообщения и чаты</h2>
-                    <button onclick="fetchUserConversations()" class="text-xs text-indigo-600 font-medium flex items-center gap-1 hover:underline">
+                    <button onclick="fetchUserConversations(false)" class="text-xs text-indigo-600 font-medium flex items-center gap-1 hover:underline">
                         <i class="fa-solid fa-rotate-right"></i> Обновить
                     </button>
                 </div>
-
                 <div id="chats-list" class="space-y-2.5">
                     <!-- Populated dynamically by JS -->
                 </div>
@@ -252,7 +238,6 @@
                 <div id="pull-spinner" class="h-0 opacity-0 overflow-hidden flex items-center justify-center text-indigo-600 text-xs gap-2 font-medium">
                     <i class="fa-solid fa-arrows-rotate animate-spin"></i> Обновление моих поездок...
                 </div>
-
                 <div class="flex justify-between items-center">
                     <h2 class="text-base font-bold text-slate-800">Мои предложенные поездки</h2>
                     <button onclick="fetchMyRidesFromSupabase()" class="text-xs text-indigo-600 font-medium flex items-center gap-1 hover:underline">
@@ -263,18 +248,15 @@
                     <!-- Populated by JS -->
                 </div>
             </section>
-
         </main>
 
         <!-- Ride Detail Modal -->
         <div id="detail-modal" class="modal-overlay" onclick="closeModalOnBackdrop(event)">
             <div class="modal-sheet relative space-y-4" onclick="event.stopPropagation()">
                 <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-1"></div>
-
                 <button onclick="closeModal()" class="absolute right-4 top-4 text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full w-7 h-7 flex items-center justify-center transition">
                     <i class="fa-solid fa-xmark text-sm"></i>
                 </button>
-
                 <div class="flex items-center justify-between pr-8">
                     <div class="flex items-center gap-3">
                         <img id="modal-driver-avatar" src="" alt="Avatar" class="w-11 h-11 rounded-full object-cover border border-slate-100 shadow-sm">
@@ -284,7 +266,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100 flex items-center justify-between">
                     <div>
                         <div class="text-[10px] text-slate-400">Стоимость за весь маршрут</div>
@@ -297,18 +278,14 @@
                         <div id="modal-seats" class="text-xs text-indigo-700 font-semibold mt-0.5"></div>
                     </div>
                 </div>
-
                 <div class="space-y-1">
                     <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Маршрут поездки</label>
-                    <div id="modal-route" class="bg-indigo-50/60 p-2.5 rounded-xl border border-indigo-100 text-xs font-medium text-slate-800 space-y-1.5">
-                    </div>
+                    <div id="modal-route" class="bg-indigo-50/60 p-2.5 rounded-xl border border-indigo-100 text-xs font-medium text-slate-800 space-y-1.5"></div>
                 </div>
-
                 <div class="space-y-1">
                     <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Комментарий водителя</label>
                     <p id="modal-comment" class="text-xs text-slate-600 italic bg-slate-50 p-2.5 rounded-xl border border-slate-100 leading-relaxed"></p>
                 </div>
-
                 <div id="auth-required-banner" class="bg-indigo-50 border border-indigo-200 p-3.5 rounded-2xl text-center space-y-2 hidden">
                     <div class="text-indigo-900 font-bold text-xs flex items-center justify-center gap-1.5">
                         <i class="fa-solid fa-lock text-indigo-600"></i> Контакты и чат скрыты
@@ -318,14 +295,12 @@
                         Быстрый вход через VK ID или Telegram
                     </button>
                 </div>
-
                 <div id="modal-contact-actions" class="space-y-2">
                     <div id="modal-owner-actions" class="hidden pt-1 pb-1">
                         <button id="btn-modal-edit" onclick="openEditFromDetail()" class="w-full bg-slate-100 text-slate-800 hover:bg-slate-200 py-2.5 rounded-xl font-medium text-xs transition flex items-center justify-center gap-2 border border-slate-200">
                             <i class="fa-solid fa-pen-to-square text-indigo-600"></i> Редактировать эту поездку
                         </button>
                     </div>
-
                     <div class="pt-1 space-y-2">
                         <button id="btn-inapp-chat" onclick="openChatFromDetail()" class="w-full vk-bg text-white py-2.5 rounded-xl font-medium text-xs hover:opacity-95 transition shadow-sm flex items-center justify-center gap-2">
                             <i class="fa-regular fa-comment-dots text-sm"></i> Написать сообщение водителю
@@ -334,21 +309,18 @@
                         <a id="btn-phone" href="#" class="w-full bg-emerald-600 text-white py-2.5 rounded-xl font-medium text-xs hover:bg-emerald-700 transition shadow-sm flex items-center justify-center gap-2 hidden">
                             <i class="fa-solid fa-phone text-xs"></i> Позвонить водителю
                         </a>
-
                         <!-- Share Ride Button -->
                         <button id="btn-share-ride" onclick="shareCurrentRide()" class="w-full bg-sky-500 hover:bg-sky-600 text-white py-2.5 rounded-xl font-medium text-xs transition shadow-sm flex items-center justify-center gap-2">
                             <i class="fa-solid fa-share-nodes text-xs"></i> Поделиться поездкой
                         </button>
                     </div>
                 </div>
-
             </div>
         </div>
 
         <!-- Chat Modal Sheet -->
         <div id="chat-modal" class="modal-overlay" onclick="closeChatModalOnBackdrop(event)">
             <div class="chat-sheet relative" onclick="event.stopPropagation()">
-                
                 <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                     <div class="flex items-center gap-2.5">
                         <img id="chat-header-avatar" src="" alt="Avatar" class="w-9 h-9 rounded-full object-cover border border-slate-100">
@@ -357,23 +329,19 @@
                             <p id="chat-header-route" class="text-[10px] text-slate-500 font-medium max-w-[180px] truncate"></p>
                         </div>
                     </div>
-
                     <button onclick="closeChatModal()" class="text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full w-7 h-7 flex items-center justify-center transition">
                         <i class="fa-solid fa-xmark text-sm"></i>
                     </button>
                 </div>
-
                 <div id="chat-messages-container" class="flex-1 overflow-y-auto py-3 space-y-2.5">
                     <!-- Messages populated dynamically -->
                 </div>
-
                 <div id="chat-input-bar" class="pt-2 border-t border-slate-100 flex items-center gap-2">
                     <input type="text" id="chat-input-text" placeholder="Напишите сообщение..." onkeydown="if(event.key==='Enter') sendChatMessage()" class="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500 transition">
                     <button onclick="sendChatMessage()" class="vk-bg text-white w-10 h-10 rounded-xl flex items-center justify-center hover:opacity-90 active:scale-95 transition">
                         <i class="fa-solid fa-paper-plane text-xs"></i>
                     </button>
                 </div>
-
             </div>
         </div>
 
@@ -381,11 +349,9 @@
         <div id="login-modal" class="modal-overlay" onclick="closeLoginModalOnBackdrop(event)">
             <div class="modal-sheet relative space-y-4" onclick="event.stopPropagation()">
                 <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-1"></div>
-
                 <button onclick="closeLoginModal()" class="absolute right-4 top-4 text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full w-7 h-7 flex items-center justify-center transition">
                     <i class="fa-solid fa-xmark text-sm"></i>
                 </button>
-
                 <div class="text-center space-y-2 pt-2">
                     <div class="w-12 h-12 vk-bg text-white rounded-2xl flex items-center justify-center mx-auto text-xl shadow-md">
                         <i class="fa-solid fa-arrows-left-right"></i>
@@ -393,7 +359,6 @@
                     <h3 class="font-bold text-slate-800 text-sm">Авторизация в Туда-Сюда</h3>
                     <p class="text-xs text-slate-500 max-w-xs mx-auto">Войдите, чтобы связываться с водителями и публиковать свои поездки</p>
                 </div>
-
                 <div class="space-y-2.5 pt-2">
                     <button onclick="performDemoLogin('vk')" class="w-full vk-bg text-white py-3 rounded-xl font-medium text-xs shadow-md flex items-center justify-center gap-2 hover:opacity-95 transition">
                         <i class="fa-brands fa-vk text-base"></i> Войти через VK ID
@@ -402,7 +367,6 @@
                     <button onclick="loginWithTelegram()" class="w-full tg-bg text-white py-3 rounded-xl font-medium text-xs shadow-md flex items-center justify-center gap-2 hover:opacity-95 transition">
                         <i class="fa-brands fa-telegram text-base"></i> Войти через Telegram
                     </button>
-
                     <button onclick="performDemoLogin('phone')" class="w-full bg-slate-100 text-slate-700 hover:bg-slate-200 py-3 rounded-xl font-medium text-xs flex items-center justify-center gap-2 transition border border-slate-200">
                         <i class="fa-solid fa-mobile-screen-button text-slate-500"></i> по Номеру телефона
                     </button>
@@ -414,33 +378,25 @@
         <div id="edit-ride-modal" class="modal-overlay" onclick="closeEditRideModalOnBackdrop(event)">
             <div class="modal-sheet relative space-y-4" onclick="event.stopPropagation()">
                 <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-1"></div>
-
                 <button onclick="closeEditRideModal()" class="absolute right-4 top-4 text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full w-7 h-7 flex items-center justify-center transition">
                     <i class="fa-solid fa-xmark text-sm"></i>
                 </button>
-
                 <div class="flex items-center gap-2 border-b border-slate-100 pb-2">
                     <i class="fa-solid fa-pen-to-square text-indigo-600 text-base"></i>
                     <h3 class="font-bold text-slate-800 text-sm">Редактировать поездку</h3>
                 </div>
-
                 <form id="edit-ride-form" onsubmit="handleSaveEditedRide(event)" class="space-y-3">
                     <input type="hidden" id="edit-ride-id">
-
                     <div class="space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
                         <label class="text-xs font-semibold text-slate-600">Маршрут следования</label>
-                        
                         <input type="text" id="edit-pub-from" required placeholder="Пункт отправления (А)" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
                         
                         <div id="edit-stops-container" class="space-y-2"></div>
-
                         <button type="button" onclick="addEditStopInput()" class="text-xs text-indigo-600 font-medium flex items-center gap-1 py-1 hover:underline">
                             <i class="fa-solid fa-plus-circle"></i> + Добавить промежуточную остановку
                         </button>
-
                         <input type="text" id="edit-pub-to" required placeholder="Конечный пункт (В)" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
                     </div>
-
                     <div class="grid grid-cols-2 gap-2">
                         <div>
                             <label class="text-[11px] font-semibold text-slate-600 block mb-1">Дата</label>
@@ -451,7 +407,6 @@
                             <input type="time" id="edit-pub-time" required class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
                         </div>
                     </div>
-
                     <div class="grid grid-cols-2 gap-2">
                         <div>
                             <label class="text-[11px] font-semibold text-slate-600 block mb-1">Цена за весь маршрут (₽)</label>
@@ -468,17 +423,14 @@
                             </select>
                         </div>
                     </div>
-
                     <div>
                         <label class="text-[11px] font-semibold text-slate-600 block mb-1">Телефон для связи</label>
                         <input type="tel" id="edit-pub-phone" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
                     </div>
-
                     <div>
                         <label class="text-[11px] font-semibold text-slate-600 block mb-1">Комментарий</label>
                         <textarea id="edit-pub-comment" rows="2" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500"></textarea>
                     </div>
-
                     <div class="flex gap-2 pt-1">
                         <button type="submit" class="flex-1 vk-bg text-white py-2.5 rounded-xl font-medium text-xs hover:opacity-95 transition shadow-sm">
                             Сохранить изменения
@@ -492,11 +444,9 @@
         <div id="profile-modal" class="modal-overlay" onclick="closeProfileModalOnBackdrop(event)">
             <div class="modal-sheet relative space-y-4" onclick="event.stopPropagation()">
                 <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-1"></div>
-
                 <button onclick="closeProfileModal()" class="absolute right-4 top-4 text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full w-7 h-7 flex items-center justify-center transition">
                     <i class="fa-solid fa-xmark text-sm"></i>
                 </button>
-
                 <div class="text-center space-y-2">
                     <img id="cabinet-avatar" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80" alt="Avatar" class="w-16 h-16 rounded-full object-cover mx-auto border-2 border-indigo-500 shadow-sm">
                     <div>
@@ -506,7 +456,6 @@
                         </span>
                     </div>
                 </div>
-
                 <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-3 text-xs">
                     <h4 class="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Данные аккаунта</h4>
                     
@@ -514,26 +463,21 @@
                         <label class="text-[11px] font-semibold text-slate-600 block mb-1">Имя и Фамилия</label>
                         <input type="text" id="edit-name" value="Пользователь" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
                     </div>
-
                     <div>
                         <label class="text-[11px] font-semibold text-slate-600 block mb-1">Телефон по умолчанию</label>
                         <input type="tel" id="edit-phone" value="" placeholder="+7 (900) 000-00-00" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
                         <p class="text-[10px] text-slate-400 mt-1">При сохранении новые данные автоматически обновятся во всех ваших опубликованных поездках.</p>
                     </div>
-
                     <button onclick="saveProfile()" class="w-full vk-bg text-white py-2 rounded-xl font-medium text-xs hover:opacity-95 transition shadow-sm">
                         Сохранить изменения
                     </button>
-
                     <button onclick="requestVkNotifications()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-2 rounded-xl font-medium text-xs transition flex items-center justify-center gap-2 border border-slate-200">
                         <i class="fa-regular fa-bell text-indigo-600"></i> Разрешить Push-уведомления
                     </button>
-
                     <button onclick="logoutAccount()" class="w-full bg-rose-50 hover:bg-rose-100 text-rose-600 py-2 rounded-xl font-medium text-xs transition flex items-center justify-center gap-2 border border-rose-200 mt-2">
                         <i class="fa-solid fa-right-from-bracket text-xs"></i> Выйти из аккаунта
                     </button>
                 </div>
-
             </div>
         </div>
 
@@ -543,8 +487,8 @@
             <span id="toast-text" class="truncate">Уведомление</span>
         </div>
 
-        <!-- Bottom Navigation -->
-        <nav class="fixed bottom-0 w-full max-w-md bg-white border-t border-slate-200 flex justify-around py-2 z-30">
+        <!-- Bottom Navigation Bar with Safe Area Bottom Support -->
+        <nav class="fixed bottom-0 w-full max-w-md bg-white border-t border-slate-200 flex justify-around py-2 z-30 safe-bottom-nav">
             <button onclick="switchTab('search')" id="nav-search" class="flex flex-col items-center gap-1 active-tab w-1/4">
                 <i class="fa-solid fa-magnifying-glass text-lg"></i>
                 <span class="text-[11px] font-medium">Поиск</span>
@@ -565,37 +509,39 @@
                 <span class="text-[11px] font-medium">Мои поездки</span>
             </button>
         </nav>
-
     </div>
 
     <script>
-        // Prevent sandbox WebSocket SecurityErrors from bubbling up to global handler
-        window.addEventListener('error', function(event) {
-            if (event && event.message && (event.message.includes('WebSocket') || event.message.includes('SecurityError'))) {
-                event.preventDefault();
-                return true;
-            }
-        });
-
-        // Test if WebSockets are permitted in the current environment (e.g. Canvas sandbox)
-        let isWebSocketAllowed = false;
-        try {
-            if (typeof WebSocket !== 'undefined') {
-                const testSocket = new WebSocket('wss://echo.websocket.org');
-                testSocket.close();
-                isWebSocketAllowed = true;
-            }
-        } catch (e) {
-            isWebSocketAllowed = false;
+        // VK Bridge Initialization
+        if (typeof vkBridge !== 'undefined') {
+            vkBridge.send('VKWebAppInit').catch(e => console.log('VK Bridge init:', e));
         }
 
-        // Global State Variables Initialization
+        // Telegram WebApp SDK Initialization (Calling ready and expand)
+        if (window.Telegram && window.Telegram.WebApp) {
+            try {
+                window.Telegram.WebApp.ready();
+                window.Telegram.WebApp.expand();
+            } catch (e) {
+                console.log('TG WebApp init error:', e);
+            }
+        }
+
+        // Supabase Initialization
+        const SUPABASE_URL = "https://oqyjirsmbxjxahciomez.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_e-P2bnSM9fOAqg6U8SZohg_UIf4OFGz";
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80";
+        const SUPPORT_AVATAR = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80";
+
+        // Global State
         let isAuthenticated = false;
         let authProvider = 'none';
         let currentUser = {
             id: null,
             name: "Пользователь",
-            avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80",
+            avatar: DEFAULT_AVATAR,
             phone: ""
         };
 
@@ -613,75 +559,36 @@
             }
         }
 
-        let unreadMap = {};
+        let isWebSocketConnected = false;
         let pollingIntervalTimer = null;
+        let unreadMap = {};
         let searchResultsRides = [];
         let myRidesList = [];
         let userConversations = [];
         let activeChat = null;
         let activeSelectedRide = null;
         let isFilterActive = false;
+        let lastConversationsHash = '';
         const today = new Date().toISOString().split('T')[0];
 
-        function getConversationLastRead(convKey) {
-            return localStorage.getItem(`ts_read_${convKey}`) || null;
-        }
-
-        function setConversationLastRead(convKey) {
-            localStorage.setItem(`ts_read_${convKey}`, new Date().toISOString());
-            if (unreadMap[convKey]) {
-                delete unreadMap[convKey];
-                updateUnreadBadgeUI();
+        // Sanitize Avatar URLs against XSS / injection attacks
+        function sanitizeUrl(url) {
+            if (!url) return DEFAULT_AVATAR;
+            const clean = String(url).trim();
+            if (clean.startsWith('https://') || clean.startsWith('http://')) {
+                return escapeHtml(clean);
             }
-        }
-
-        if (typeof vkBridge !== 'undefined') {
-            vkBridge.send('VKWebAppInit').catch(e => console.log('VK Bridge error:', e));
-        }
-
-        const SUPABASE_URL = "https://oqyjirsmbxjxahciomez.supabase.co";
-        const SUPABASE_KEY = "sb_publishable_e-P2bnSM9fOAqg6U8SZohg_UIf4OFGz";
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        async function syncUserProfileToDatabase() {
-            if (!isAuthenticated || !currentUser || !currentUser.id) return;
-            try {
-                const profilePayload = {
-                    id: String(currentUser.id),
-                    full_name: currentUser.name || 'Пользователь',
-                    avatar_url: currentUser.avatar || '',
-                    phone: currentUser.phone || '',
-                    auth_provider: authProvider || 'vk',
-                    last_active_at: new Date().toISOString()
-                };
-
-                const { error } = await supabaseClient
-                    .from('profiles')
-                    .upsert(profilePayload, { onConflict: 'id' });
-
-                if (error) {
-                    console.warn('Profiles table sync warning:', error);
-                }
-            } catch (e) {
-                console.warn('Error syncing profile:', e);
-            }
-        }
-
-        function saveUserSession() {
-            if (isAuthenticated) {
-                localStorage.setItem('ts_user_session', JSON.stringify({
-                    provider: authProvider,
-                    user: currentUser
-                }));
-                syncUserProfileToDatabase();
-            } else {
-                localStorage.removeItem('ts_user_session');
-            }
+            return DEFAULT_AVATAR;
         }
 
         function escapeHtml(text) {
             if (!text) return '';
-            return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+            return String(text)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
         }
 
         function parseStop(stopItem) {
@@ -696,9 +603,15 @@
             return { name: String(stopItem), price: null };
         }
 
-        function triggerVkHaptic() {
-            if (typeof vkBridge !== 'undefined') {
-                vkBridge.send('VKWebAppTapticNotificationOccurred', { type: 'custom' }).catch(() => {});
+        function getConversationLastRead(convKey) {
+            return localStorage.getItem(`ts_read_${convKey}`) || null;
+        }
+
+        function setConversationLastRead(convKey) {
+            localStorage.setItem(`ts_read_${convKey}`, new Date().toISOString());
+            if (unreadMap[convKey]) {
+                delete unreadMap[convKey];
+                updateUnreadBadgeUI();
             }
         }
 
@@ -719,6 +632,12 @@
             }
         }
 
+        function triggerVkHaptic() {
+            if (typeof vkBridge !== 'undefined') {
+                vkBridge.send('VKWebAppTapticNotificationOccurred', { type: 'custom' }).catch(() => {});
+            }
+        }
+
         function requestVkNotifications() {
             if (typeof vkBridge !== 'undefined') {
                 vkBridge.send('VKWebAppAllowNotifications')
@@ -735,39 +654,58 @@
             }
         }
 
+        // Smart Polling with Page Visibility API & Connection Awareness
         function startMessagesPolling() {
-            if (pollingIntervalTimer) clearInterval(pollingIntervalTimer);
-            
+            stopMessagesPolling();
+            if (!isAuthenticated) return;
+
+            // Poll every 10 seconds if user is in app, or fallback when WS is down
             pollingIntervalTimer = setInterval(async () => {
-                if (!isAuthenticated) return;
+                if (!isAuthenticated || document.hidden) return;
                 
                 const isChatModalOpen = document.getElementById('chat-modal').classList.contains('open');
                 if (isChatModalOpen && activeChat) {
                     await fetchChatMessages(true);
                 }
-
-                await fetchUserConversations(true);
-            }, 4000);
+                
+                // Only poll conversations list if WebSocket is not active or tab is visible
+                if (!isWebSocketConnected || !document.getElementById('tab-chats').classList.contains('hidden')) {
+                    await fetchUserConversations(true);
+                }
+            }, 10000);
         }
 
-        function initRealtimeMessages() {
-            if (!isWebSocketAllowed) {
-                // In sandboxed environments (like Canvas), WebSockets are restricted.
-                // startMessagesPolling() handles message syncing reliably every 4 seconds.
-                return;
+        function stopMessagesPolling() {
+            if (pollingIntervalTimer) {
+                clearInterval(pollingIntervalTimer);
+                pollingIntervalTimer = null;
             }
+        }
 
+        // Pause polling on background tab to save battery and database quotas
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                stopMessagesPolling();
+            } else if (isAuthenticated) {
+                startMessagesPolling();
+                fetchUserConversations(true);
+            }
+        });
+
+        // Safe Supabase Realtime WebSocket Connection (No echo.websocket.org call)
+        function initRealtimeMessages() {
             if (window.messagesChannel) {
                 try {
                     supabaseClient.removeChannel(window.messagesChannel);
                 } catch(e) {}
             }
-
-            // Check if WebSockets are available and permitted in the current environment
-            if (typeof WebSocket === 'undefined') return;
+            if (typeof WebSocket === 'undefined') {
+                isWebSocketConnected = false;
+                startMessagesPolling();
+                return;
+            }
 
             try {
-                // Probe if WebSocket constructor is restricted by sandboxed iframe/Canvas
                 const channel = supabaseClient.channel('realtime-messages-stream');
                 
                 channel.on('postgres_changes', {
@@ -777,7 +715,6 @@
                 }, payload => {
                     const newMsg = payload.new;
                     if (!newMsg || !isAuthenticated) return;
-
                     const myId = String(currentUser.id || currentUser.name);
                     const senderId = String(newMsg.sender_id || '');
                     const senderName = String(newMsg.sender_name || '');
@@ -787,13 +724,10 @@
                     if (senderId === myId || senderName === currentUser.name) {
                         return;
                     }
-
                     const isForMe = (recipientId === myId || recipientName === currentUser.name || recipientId === currentUser.name);
-
                     if (isForMe) {
                         const isChatModalOpen = document.getElementById('chat-modal').classList.contains('open');
                         const isSupport = (newMsg.ride_id === null || newMsg.ride_id === undefined || newMsg.ride_id === 'null');
-
                         if (isChatModalOpen && activeChat && String(activeChat.rideId) === String(newMsg.ride_id)) {
                             appendChatMessage(newMsg);
                             setConversationLastRead(`${newMsg.ride_id}_${senderName}`);
@@ -802,24 +736,57 @@
                             const convKey = isSupport ? `null_Служба поддержки Туда-Сюда` : `${newMsg.ride_id}_${senderName}`;
                             unreadMap[convKey] = (unreadMap[convKey] || 0) + 1;
                             updateUnreadBadgeUI();
-
                             showToast(`💬 ${senderName}: "${newMsg.text.length > 25 ? newMsg.text.substring(0, 25) + '...' : newMsg.text}"`);
                             triggerVkHaptic();
-
                             fetchUserConversations(true);
                         }
                     }
                 });
 
                 channel.subscribe((status, err) => {
-                    if (err || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-                        console.warn('Realtime subscription unavailable in current environment, using polling:', err || status);
+                    if (status === 'SUBSCRIBED') {
+                        isWebSocketConnected = true;
+                    } else if (err || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+                        isWebSocketConnected = false;
+                        startMessagesPolling();
                     }
                 });
 
                 window.messagesChannel = channel;
             } catch (e) {
-                console.warn('WebSocket connection blocked by environment sandbox. Polling fallback is active:', e);
+                isWebSocketConnected = false;
+                startMessagesPolling();
+            }
+        }
+
+        async function syncUserProfileToDatabase() {
+            if (!isAuthenticated || !currentUser || !currentUser.id) return;
+            try {
+                const profilePayload = {
+                    id: String(currentUser.id),
+                    full_name: currentUser.name || 'Пользователь',
+                    avatar_url: currentUser.avatar || DEFAULT_AVATAR,
+                    phone: currentUser.phone || '',
+                    auth_provider: authProvider || 'vk',
+                    last_active_at: new Date().toISOString()
+                };
+                await supabaseClient
+                    .from('profiles')
+                    .upsert(profilePayload, { onConflict: 'id' });
+            } catch (e) {
+                console.warn('Error syncing profile:', e);
+            }
+        }
+
+        function saveUserSession() {
+            if (isAuthenticated) {
+                localStorage.setItem('ts_user_session', JSON.stringify({
+                    provider: authProvider,
+                    user: currentUser
+                }));
+                syncUserProfileToDatabase();
+            } else {
+                localStorage.removeItem('ts_user_session');
             }
         }
 
@@ -832,7 +799,6 @@
                 } else {
                     query = query.eq('driver_name', currentUser.name);
                 }
-
                 const { data } = await query;
                 if (data && data.length > 0 && data[0].phone) {
                     currentUser.phone = data[0].phone;
@@ -846,7 +812,6 @@
         function syncProfileUI() {
             const headerName = document.getElementById('header-name');
             const headerIcon = document.getElementById('header-icon');
-
             if (isAuthenticated) {
                 headerName.innerText = currentUser.name.split(' ')[0];
                 headerIcon.className = 'fa-solid fa-gear text-[10px] opacity-80';
@@ -854,9 +819,9 @@
                 headerName.innerText = 'Войти';
                 headerIcon.className = 'fa-solid fa-right-to-bracket text-[10px] opacity-80';
             }
-
-            document.getElementById('header-avatar').src = currentUser.avatar;
-            document.getElementById('cabinet-avatar').src = currentUser.avatar;
+            const safeAvatar = sanitizeUrl(currentUser.avatar);
+            document.getElementById('header-avatar').src = safeAvatar;
+            document.getElementById('cabinet-avatar').src = safeAvatar;
             document.getElementById('cabinet-name').innerText = currentUser.name;
             document.getElementById('edit-name').value = currentUser.name;
             document.getElementById('edit-phone').value = currentUser.phone || '';
@@ -891,37 +856,33 @@
         function openLoginModal() {
             document.getElementById('login-modal').classList.add('open');
         }
-
         function closeLoginModal() {
             document.getElementById('login-modal').classList.remove('open');
         }
-
         function closeLoginModalOnBackdrop(e) {
             closeLoginModal();
         }
 
         function logoutAccount() {
-            if (pollingIntervalTimer) clearInterval(pollingIntervalTimer);
+            stopMessagesPolling();
             isAuthenticated = false;
             authProvider = 'none';
             currentUser = {
                 id: null,
                 name: "Пользователь",
-                avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80",
+                avatar: DEFAULT_AVATAR,
                 phone: ""
             };
-
             unreadMap = {};
             updateUnreadBadgeUI();
             saveUserSession();
             syncProfileUI();
             closeProfileModal();
             showToast('Вы вышли из аккаунта');
-
             if (!document.getElementById('tab-my-rides').classList.contains('hidden')) {
                 renderMyRides();
             } else if (!document.getElementById('tab-chats').classList.contains('hidden')) {
-                fetchUserConversations();
+                fetchUserConversations(false);
             }
         }
 
@@ -933,7 +894,6 @@
                 if (activeSelectedRide) openRideDetail(activeSelectedRide.id);
                 return;
             }
-
             showToast('Переход в Telegram...');
             window.open('https://t.me/ts_poezdki_bot', '_blank');
         }
@@ -941,25 +901,22 @@
         async function performDemoLogin(type) {
             if (type === 'vk') {
                 const isInsideVk = window.location.search.includes('vk_user_id') || (window.name && window.name.includes('vk'));
-                
                 if (typeof vkBridge !== 'undefined' && isInsideVk) {
                     try {
                         const user = await Promise.race([
                             vkBridge.send('VKWebAppGetUserInfo'),
                             new Promise((_, reject) => setTimeout(() => reject('timeout'), 2000))
                         ]);
-
                         if (user && user.id) {
                             isAuthenticated = true;
                             authProvider = 'vk';
                             currentUser.id = String(user.id);
                             currentUser.name = `${user.first_name} ${user.last_name}`;
-                            currentUser.avatar = user.photo_200 || user.photo_100 || currentUser.avatar;
+                            currentUser.avatar = user.photo_200 || user.photo_100 || DEFAULT_AVATAR;
                             
                             const savedPhone = localStorage.getItem('ts_user_phone');
                             if (savedPhone) currentUser.phone = savedPhone;
                             await fetchUserPhoneFromDB();
-
                             saveUserSession();
                             syncProfileUI();
                             initRealtimeMessages();
@@ -968,23 +925,21 @@
                             showToast(`Добро пожаловать, ${currentUser.name}!`);
                             if (activeSelectedRide) openRideDetail(activeSelectedRide.id);
                             await fetchMyRidesFromSupabase();
-                            await fetchUserConversations(true);
+                            await fetchUserConversations(false);
                             return;
                         }
                     } catch (e) {
-                        console.log('VK Login error:', e);
+                        console.log('VK Login fallback:', e);
                     }
                 }
             }
-
             isAuthenticated = true;
             authProvider = type;
-            currentUser.id = "user_vlad_" + Math.floor(Math.random() * 1000);
+            currentUser.id = "user_demo_" + Math.floor(Math.random() * 1000);
             currentUser.name = "Влад Маркин";
-            currentUser.avatar = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80";
+            currentUser.avatar = DEFAULT_AVATAR;
             const savedPhone = localStorage.getItem('ts_user_phone') || "+7 (999) 888-77-77";
             currentUser.phone = savedPhone;
-
             saveUserSession();
             syncProfileUI();
             initRealtimeMessages();
@@ -993,7 +948,7 @@
             showToast('Успешный вход!');
             if (activeSelectedRide) openRideDetail(activeSelectedRide.id);
             await fetchMyRidesFromSupabase();
-            await fetchUserConversations(true);
+            await fetchUserConversations(false);
         }
 
         async function initTgUserData() {
@@ -1011,7 +966,6 @@
                 
                 saveUserSession();
                 syncProfileUI();
-                window.Telegram.WebApp.expand();
             }
         }
 
@@ -1019,29 +973,25 @@
             if (typeof vkBridge !== 'undefined') {
                 const isInsideVk = window.location.search.includes('vk_user_id') || (window.name && window.name.includes('vk'));
                 if (!isInsideVk && isAuthenticated) return;
-
                 try {
                     const user = await Promise.race([
                         vkBridge.send('VKWebAppGetUserInfo'),
                         new Promise((_, reject) => setTimeout(() => reject('timeout'), 2000))
                     ]);
-
                     if (user && user.id) {
                         isAuthenticated = true;
                         authProvider = 'vk';
                         currentUser.id = String(user.id);
                         currentUser.name = `${user.first_name} ${user.last_name}`;
-                        currentUser.avatar = user.photo_200 || user.photo_100 || currentUser.avatar;
-
+                        currentUser.avatar = user.photo_200 || user.photo_100 || DEFAULT_AVATAR;
                         const savedPhone = localStorage.getItem('ts_user_phone');
                         if (savedPhone) currentUser.phone = savedPhone;
                         await fetchUserPhoneFromDB();
-
                         saveUserSession();
                         syncProfileUI();
                     }
                 } catch (e) {
-                    console.log('VK Init error:', e);
+                    console.log('VK Init log:', e);
                 }
             }
         }
@@ -1051,7 +1001,6 @@
                 renderMyRides();
                 return;
             }
-
             try {
                 let query = supabaseClient.from('rides').select('*');
                 if (currentUser.id) {
@@ -1059,14 +1008,11 @@
                 } else {
                     query = query.eq('driver_name', currentUser.name);
                 }
-
                 const { data, error } = await query.order('date', { ascending: true }).order('time', { ascending: true });
-
                 if (error) {
                     console.error('Supabase fetch my rides error:', error);
                     return;
                 }
-
                 if (data) {
                     myRidesList = data.map(r => ({
                         id: r.id,
@@ -1103,7 +1049,6 @@
             const now = new Date();
             const rideDateTime = new Date(`${ride.date}T${ride.time}`);
             if (rideDateTime >= now) return false;
-
             const daysDiff = (now - rideDateTime) / (1000 * 60 * 60 * 24);
             return daysDiff <= 31;
         }
@@ -1111,7 +1056,6 @@
         function renderRides(itemsToRender = null) {
             const container = document.getElementById('rides-container');
             const feedHeader = document.getElementById('feed-header-box');
-
             if (!isFilterActive) {
                 feedHeader.classList.add('hidden');
                 container.innerHTML = `
@@ -1126,19 +1070,15 @@
                 `;
                 return;
             }
-
             const items = itemsToRender || searchResultsRides;
             const futureActiveItems = items.filter(r => isRideInFuture(r));
-
             const sortedItems = [...futureActiveItems].sort((a, b) => {
                 const dateTimeA = `${a.date} ${a.time}`;
                 const dateTimeB = `${b.date} ${b.time}`;
                 return dateTimeA.localeCompare(dateTimeB);
             });
-
             feedHeader.classList.remove('hidden');
             document.getElementById('rides-count').innerText = `Всего: ${sortedItems.length}`;
-
             if (sortedItems.length === 0) {
                 container.innerHTML = `
                     <div class="text-center py-10 bg-white rounded-2xl border border-slate-100">
@@ -1149,15 +1089,15 @@
                 `;
                 return;
             }
-
             container.innerHTML = sortedItems.map(ride => {
                 const routeFormatted = ride.route.map(item => parseStop(item).name).join(' ➔ ');
                 const isOwner = isRideOwner(ride);
+                const safeAvatar = sanitizeUrl(ride.driverAvatar);
                 return `
                     <div onclick="openRideDetail(${ride.id})" class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm space-y-2 hover:border-indigo-300 active:scale-[0.99] transition cursor-pointer">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-2.5">
-                                <img src="${ride.driverAvatar}" alt="${escapeHtml(ride.driverName)}" class="w-9 h-9 rounded-full object-cover border border-slate-100">
+                                <img src="${safeAvatar}" alt="${escapeHtml(ride.driverName)}" class="w-9 h-9 rounded-full object-cover border border-slate-100">
                                 <div>
                                     <div class="flex items-center gap-1.5">
                                         <h4 class="text-xs font-bold text-slate-800">${escapeHtml(ride.driverName)}</h4>
@@ -1171,7 +1111,6 @@
                                 <div class="text-[10px] text-slate-400">за 1 место</div>
                             </div>
                         </div>
-
                         <div class="bg-slate-50 p-2 rounded-xl border border-slate-100 text-xs">
                             <div class="flex items-center font-bold text-slate-700 gap-1.5">
                                 <i class="fa-regular fa-clock text-indigo-500"></i>
@@ -1191,7 +1130,6 @@
         function renderMyRides() {
             const container = document.getElementById('my-rides-list');
             if (!container) return;
-
             if (!isAuthenticated) {
                 container.innerHTML = `
                     <div class="text-center py-8 bg-white rounded-2xl border border-slate-100 space-y-3 p-4">
@@ -1206,10 +1144,8 @@
                 `;
                 return;
             }
-
             const activeMyRides = myRidesList.filter(r => isRideInFuture(r)).sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
             const pastMyRides = myRidesList.filter(r => isRideWithin30DaysPast(r)).sort((a, b) => `${b.date} ${b.time}`.localeCompare(`${a.date} ${a.time}`));
-
             if (activeMyRides.length === 0 && pastMyRides.length === 0) {
                 container.innerHTML = `
                     <div class="text-center py-8 bg-white rounded-2xl border border-slate-100 space-y-2">
@@ -1220,9 +1156,7 @@
                 `;
                 return;
             }
-
             let html = '';
-
             if (activeMyRides.length > 0) {
                 html += activeMyRides.map(ride => {
                     const routeFormatted = ride.route.map(item => parseStop(item).name).join(' ➔ ');
@@ -1234,18 +1168,16 @@
                                 </span>
                                 <span class="text-xs font-black text-slate-800">${ride.price} ₽</span>
                             </div>
-
                             <div class="text-xs font-semibold text-slate-800 bg-slate-50 p-2 rounded-xl border border-slate-100">
                                 ${escapeHtml(routeFormatted)}
                             </div>
-
                             <div class="flex items-center justify-between pt-1 border-t border-slate-100">
                                 <span class="text-[10px] text-slate-500 font-medium">Мест всего: ${ride.seats}</span>
                                 <div class="flex items-center gap-2">
                                     <button onclick="openEditRideModal(${ride.id})" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center gap-1">
                                         <i class="fa-solid fa-pen text-[10px]"></i> Изменить
                                     </button>
-                                    <button onclick="deleteRide(${ride.id})" class="text-xs text-rose-500 hover:text-rose-700 font-medium px-2 py-1 rounded-lg bg-rose-50 border border-rose-100">
+                                    <button onclick="deleteRide(${ride.id})" class="text-xs text-rose-500 hover:text-rose-700 font-medium px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-100">
                                         <i class="fa-solid fa-trash-can text-[10px]"></i>
                                     </button>
                                 </div>
@@ -1254,7 +1186,6 @@
                     `;
                 }).join('');
             }
-
             if (pastMyRides.length > 0) {
                 html += `
                     <div class="pt-3 pb-1">
@@ -1264,7 +1195,6 @@
                         </div>
                     </div>
                 `;
-
                 html += pastMyRides.map(ride => {
                     const routeFormatted = ride.route.map(item => parseStop(item).name).join(' ➔ ');
                     return `
@@ -1275,7 +1205,6 @@
                                 </span>
                                 <span class="text-xs font-bold text-slate-500">${ride.price} ₽</span>
                             </div>
-
                             <div class="text-xs font-medium text-slate-600 bg-slate-50 p-2 rounded-xl border border-slate-100">
                                 ${escapeHtml(routeFormatted)}
                             </div>
@@ -1283,30 +1212,25 @@
                     `;
                 }).join('');
             }
-
             container.innerHTML = html;
         }
 
         function openRideDetail(rideId) {
             const ride = searchResultsRides.find(r => r.id === rideId) || myRidesList.find(r => r.id === rideId);
             if (!ride) return;
-
             activeSelectedRide = ride;
-
-            document.getElementById('modal-driver-avatar').src = ride.driverAvatar;
+            document.getElementById('modal-driver-avatar').src = sanitizeUrl(ride.driverAvatar);
             document.getElementById('modal-driver-name').innerText = ride.driverName;
             document.getElementById('modal-price').innerText = `${ride.price} ₽`;
             document.getElementById('modal-datetime').innerText = `${ride.time} (${ride.date})`;
             document.getElementById('modal-seats').innerText = `Мест всего: ${ride.seats}`;
-
             document.getElementById('modal-comment').innerText = ride.comment ? `"${ride.comment}"` : "Комментарий не указан.";
-
+            
             const totalStops = ride.route.length;
             document.getElementById('modal-route').innerHTML = ride.route.map((item, idx) => {
                 const parsed = parseStop(item);
                 const isFirst = idx === 0;
                 const isLast = idx === totalStops - 1;
-
                 let priceTag = '';
                 if (!isFirst && !isLast) {
                     if (parsed.price && parsed.price !== '') {
@@ -1315,7 +1239,6 @@
                         priceTag = `<span class="text-slate-400 italic text-[10px] ml-1.5">(Уточнить стоимость)</span>`;
                     }
                 }
-
                 return `
                     <div class="flex items-center gap-2">
                         <span class="w-4 h-4 rounded-full bg-indigo-100 text-indigo-600 text-[10px] font-bold flex items-center justify-center shrink-0">${idx + 1}</span>
@@ -1336,13 +1259,11 @@
             } else {
                 authBanner.classList.add('hidden');
                 contactActions.classList.remove('hidden');
-
                 if (isRideOwner(ride) && isRideInFuture(ride)) {
                     ownerActions.classList.remove('hidden');
                 } else {
                     ownerActions.classList.add('hidden');
                 }
-
                 if (ride.phone && ride.phone.trim() !== '') {
                     btnPhone.classList.remove('hidden');
                     const cleanPhone = ride.phone.replace(/[^\d+]/g, '');
@@ -1352,26 +1273,21 @@
                     btnPhone.href = '#';
                 }
             }
-
             document.getElementById('detail-modal').classList.add('open');
         }
 
         function closeModal() {
             document.getElementById('detail-modal').classList.remove('open');
         }
-
         function closeModalOnBackdrop(e) {
             closeModal();
         }
-
         function openProfileModal() {
             document.getElementById('profile-modal').classList.add('open');
         }
-
         function closeProfileModal() {
             document.getElementById('profile-modal').classList.remove('open');
         }
-
         function closeProfileModalOnBackdrop(e) {
             closeProfileModal();
         }
@@ -1379,12 +1295,10 @@
         function openEditRideModal(rideId) {
             const ride = myRidesList.find(r => r.id === rideId) || searchResultsRides.find(r => r.id === rideId);
             if (!ride) return;
-
             document.getElementById('edit-ride-id').value = ride.id;
             
             const firstStop = parseStop(ride.route[0]);
             const lastStop = parseStop(ride.route[ride.route.length - 1]);
-
             document.getElementById('edit-pub-from').value = firstStop.name || '';
             document.getElementById('edit-pub-to').value = lastStop.name || '';
             document.getElementById('edit-pub-date').value = ride.date;
@@ -1393,7 +1307,7 @@
             document.getElementById('edit-pub-seats').value = ride.seats;
             document.getElementById('edit-pub-phone').value = ride.phone || '';
             document.getElementById('edit-pub-comment').value = ride.comment || '';
-
+            
             const stopsContainer = document.getElementById('edit-stops-container');
             stopsContainer.innerHTML = '';
             
@@ -1402,7 +1316,6 @@
                 const parsed = parseStop(stopItem);
                 addEditStopInput(parsed.name, parsed.price || '');
             });
-
             document.getElementById('edit-ride-modal').classList.add('open');
         }
 
@@ -1415,7 +1328,6 @@
         function closeEditRideModal() {
             document.getElementById('edit-ride-modal').classList.remove('open');
         }
-
         function closeEditRideModalOnBackdrop(e) {
             closeEditRideModal();
         }
@@ -1437,7 +1349,6 @@
         async function handleSaveEditedRide(e) {
             e.preventDefault();
             const rideId = parseInt(document.getElementById('edit-ride-id').value);
-
             const from = document.getElementById('edit-pub-from').value.trim();
             const to = document.getElementById('edit-pub-to').value.trim();
             const date = document.getElementById('edit-pub-date').value;
@@ -1446,7 +1357,6 @@
             const seats = document.getElementById('edit-pub-seats').value;
             const phone = document.getElementById('edit-pub-phone').value.trim();
             const comment = document.getElementById('edit-pub-comment').value;
-
             const stopInputs = document.querySelectorAll('.edit-stop-input');
             const priceInputs = document.querySelectorAll('.edit-stop-price');
             
@@ -1458,9 +1368,7 @@
                     stops.push(cityPrice ? `${cityName}|${cityPrice}` : cityName);
                 }
             });
-
             const route = [from, ...stops, to];
-
             try {
                 const { error } = await supabaseClient
                     .from('rides')
@@ -1474,19 +1382,16 @@
                         comment: comment
                     })
                     .eq('id', rideId);
-
                 if (error) {
                     showToast('Ошибка при сохранении изменений');
                     return;
                 }
-
                 if (phone) {
                     currentUser.phone = phone;
                     localStorage.setItem('ts_user_phone', phone);
                     saveUserSession();
                     syncProfileUI();
                 }
-
                 await fetchMyRidesFromSupabase();
                 closeEditRideModal();
                 showToast('Поездка успешно обновлена!');
@@ -1494,7 +1399,6 @@
                 if (isFilterActive) {
                     filterRides();
                 }
-
             } catch (err) {
                 showToast('Ошибка сети при сохранении');
             }
@@ -1506,19 +1410,15 @@
                     .from('rides')
                     .delete()
                     .eq('id', rideId);
-
                 if (error) {
                     showToast('Ошибка при удалении поездки');
                     return;
                 }
-
                 await fetchMyRidesFromSupabase();
                 showToast('Поездка отменена и удалена.');
-
                 if (isFilterActive) {
                     filterRides();
                 }
-
             } catch (err) {
                 showToast('Ошибка соединения');
             }
@@ -1527,16 +1427,13 @@
         async function saveProfile() {
             const newName = document.getElementById('edit-name').value.trim();
             const newPhone = document.getElementById('edit-phone').value.trim();
-
             if (!newName) {
                 showToast('Имя не может быть пустым');
                 return;
             }
-
             const oldName = currentUser.name;
             currentUser.name = newName;
             currentUser.phone = newPhone;
-
             localStorage.setItem('ts_user_phone', newPhone);
             saveUserSession();
             syncUserProfileToDatabase();
@@ -1547,22 +1444,18 @@
                         driver_name: newName,
                         phone: newPhone
                     };
-
                     let query = supabaseClient.from('rides').update(updatePayload);
                     if (currentUser.id) {
                         query = query.or(`user_id.eq.${currentUser.id},driver_name.eq.${oldName}`);
                     } else {
                         query = query.eq('driver_name', oldName);
                     }
-
                     const { error } = await query;
-
                     if (error) {
                         showToast('Ошибка при синхронизации поездок в базе');
                     } else {
                         showToast('Профиль обновлен!');
                     }
-
                     await fetchMyRidesFromSupabase();
                     if (isFilterActive) {
                         filterRides();
@@ -1573,7 +1466,6 @@
             } else {
                 showToast('Профиль сохранен!');
             }
-
             syncProfileUI();
             closeProfileModal();
         }
@@ -1591,34 +1483,27 @@
 
         function shareCurrentRide() {
             if (!activeSelectedRide) return;
-
             const firstStop = parseStop(activeSelectedRide.route[0]).name || 'Точка А';
             const lastStop = parseStop(activeSelectedRide.route[activeSelectedRide.route.length - 1]).name || 'Точка В';
-
             let formattedDate = activeSelectedRide.date;
             try {
                 const dateObj = new Date(activeSelectedRide.date + 'T00:00:00');
                 formattedDate = dateObj.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
             } catch (e) {}
-
             const shareText = `Нашёл поездку ${firstStop} ➔ ${lastStop} на ${formattedDate}`;
-
-            // Определение ID VK приложения из параметров запуска (vk_app_id)
+            
             const urlParams = new URLSearchParams(window.location.search);
             const vkAppId = urlParams.get('vk_app_id') || localStorage.getItem('ts_vk_app_id') || '';
             if (urlParams.get('vk_app_id')) {
                 localStorage.setItem('ts_vk_app_id', urlParams.get('vk_app_id'));
             }
-
-            // Формирование нативных ссылок для каждой платформы
+            
             let shareUrl = window.location.origin + window.location.pathname + '?ride=' + activeSelectedRide.id;
             const isInsideVk = window.location.search.includes('vk_user_id') || (window.name && window.name.includes('vk')) || authProvider === 'vk' || Boolean(vkAppId);
-
+            
             if (isInsideVk && vkAppId) {
-                // Если внутри VK — формируем ссылку на VK Mini App, чтобы открывалось внутри VK
                 shareUrl = `https://vk.com/app${vkAppId}#ride=${activeSelectedRide.id}`;
             } else if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) {
-                // Если внутри Telegram — формируем ссылку с параметром startapp
                 shareUrl = `https://t.me/ts_poezdki_bot?startapp=ride_${activeSelectedRide.id}`;
             }
 
@@ -1626,17 +1511,10 @@
 
             // 1. VK Mini Apps sharing
             if (typeof vkBridge !== 'undefined' && isInsideVk) {
-                // Копируем готовый текст в буфер обмена через VK Bridge
                 vkBridge.send('VKWebAppCopyText', { text: fullMessage }).catch(() => {});
-                
-                // Открываем нативное окно шеринга интерактивного виджета приложения
-                vkBridge.send('VKWebAppShare', {
-                    link: shareUrl
-                }).then(() => {
-                    showToast('Виджет отправлен!');
-                }).catch(() => {
-                    fallbackShare(shareText, shareUrl);
-                });
+                vkBridge.send('VKWebAppShare', { link: shareUrl })
+                    .then(() => showToast('Виджет отправлен!'))
+                    .catch(() => fallbackShare(shareText, shareUrl));
                 return;
             }
 
@@ -1651,7 +1529,7 @@
                 return;
             }
 
-            // 3. Native Browser / Mobile Web Share API
+            // 3. Native Browser Web Share API
             if (navigator.share) {
                 navigator.share({
                     title: 'Туда-Сюда — Поездка',
@@ -1661,7 +1539,7 @@
                 return;
             }
 
-            // 4. Fallback: Copy full message with text to clipboard
+            // 4. Fallback: Copy to clipboard
             fallbackShare(shareText, shareUrl);
         }
 
@@ -1684,48 +1562,37 @@
                 openLoginModal();
                 return;
             }
-
             if (!activeSelectedRide) return;
-
             const isOwner = isRideOwner(activeSelectedRide);
             if (isOwner) {
                 showToast('Это ваша собственная поездка');
                 return;
             }
-
             const rideDateTime = new Date(`${activeSelectedRide.date}T${activeSelectedRide.time}`);
             const now = new Date();
             const isExpired = rideDateTime < now;
-
             const routeText = activeSelectedRide.route.map(item => parseStop(item).name).join(' ➔ ');
-
             activeChat = {
                 rideId: activeSelectedRide.id,
                 recipientId: activeSelectedRide.userId || activeSelectedRide.driverName,
                 recipientName: activeSelectedRide.driverName,
-                recipientAvatar: activeSelectedRide.driverAvatar,
+                recipientAvatar: sanitizeUrl(activeSelectedRide.driverAvatar),
                 routeText: routeText,
                 isExpired: isExpired
             };
-
             const convKey = `${activeSelectedRide.id}_${activeSelectedRide.driverName}`;
             setConversationLastRead(convKey);
-
             closeModal();
             openChatModal();
         }
 
         function openChatModal() {
             if (!activeChat) return;
-
-            document.getElementById('chat-header-avatar').src = activeChat.recipientAvatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80';
+            document.getElementById('chat-header-avatar').src = sanitizeUrl(activeChat.recipientAvatar);
             document.getElementById('chat-header-name').innerText = activeChat.recipientName;
-
             const isSupport = (activeChat.rideId === null || activeChat.rideId === undefined || activeChat.rideId === 'null');
             document.getElementById('chat-header-route').innerText = isSupport ? 'Служба поддержки сервиса' : activeChat.routeText;
-
             const inputBar = document.getElementById('chat-input-bar');
-
             if (activeChat.isExpired) {
                 inputBar.innerHTML = `
                     <div class="w-full text-center py-2 px-3 bg-amber-50 border border-amber-200 text-amber-800 text-[11px] rounded-xl font-medium shadow-xs">
@@ -1740,15 +1607,13 @@
                     </button>
                 `;
             }
-
             document.getElementById('chat-modal').classList.add('open');
-            fetchChatMessages();
+            fetchChatMessages(false);
         }
 
         function closeChatModal() {
             document.getElementById('chat-modal').classList.remove('open');
         }
-
         function closeChatModalOnBackdrop(e) {
             closeChatModal();
         }
@@ -1756,14 +1621,11 @@
         function appendChatMessage(msg) {
             const container = document.getElementById('chat-messages-container');
             if (!container) return;
-
             if (container.querySelector('.fa-spinner') || container.innerText.includes('Сообщений пока нет')) {
                 container.innerHTML = '';
             }
-
             const isMyMsg = (String(msg.sender_id) === String(currentUser.id) || msg.sender_name === currentUser.name);
             const msgTime = new Date(msg.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
             const msgHtml = isMyMsg ? `
                 <div class="flex justify-end">
                     <div class="bg-indigo-600 text-white p-2.5 rounded-2xl rounded-tr-xs max-w-[80%] space-y-1 shadow-sm">
@@ -1780,14 +1642,12 @@
                     </div>
                 </div>
             `;
-
             container.insertAdjacentHTML('beforeend', msgHtml);
             container.scrollTop = container.scrollHeight;
         }
 
         async function fetchChatMessages(isSilent = false) {
             if (!activeChat || !isAuthenticated) return;
-
             const container = document.getElementById('chat-messages-container');
             if (!isSilent) {
                 container.innerHTML = `
@@ -1796,19 +1656,15 @@
                     </div>
                 `;
             }
-
             try {
                 let query = supabaseClient.from('messages').select('*');
                 let myId = String(currentUser.id || currentUser.name);
-
                 if (activeChat.rideId === null || activeChat.rideId === undefined || activeChat.rideId === 'null') {
                     query = query.is('ride_id', null).or(`sender_id.eq.${myId},recipient_id.eq.${myId},sender_name.eq.${currentUser.name},recipient_name.eq.${currentUser.name}`);
                 } else {
                     query = query.eq('ride_id', activeChat.rideId);
                 }
-
                 const { data, error } = await query.order('created_at', { ascending: true });
-
                 if (error || !data || data.length === 0) {
                     if (!isSilent) {
                         container.innerHTML = `
@@ -1819,16 +1675,13 @@
                     }
                     return;
                 }
-
                 const currentCount = container.querySelectorAll('.bg-indigo-600, .bg-slate-100').length;
                 if (isSilent && data.length === currentCount) {
                     return;
                 }
-
                 container.innerHTML = data.map(msg => {
                     const isMyMsg = (String(msg.sender_id) === String(currentUser.id) || msg.sender_name === currentUser.name);
                     const msgTime = new Date(msg.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
                     if (isMyMsg) {
                         return `
                             <div class="flex justify-end">
@@ -1850,9 +1703,7 @@
                         `;
                     }
                 }).join('');
-
                 container.scrollTop = container.scrollHeight;
-
             } catch (err) {
                 console.error(err);
             }
@@ -1863,18 +1714,14 @@
                 showToast('Поездка завершена. Отправка сообщений недоступна');
                 return;
             }
-
             const input = document.getElementById('chat-input-text');
             if (!input) return;
-
             const text = input.value.trim();
             if (!text || !activeChat || !isAuthenticated) return;
-
             input.value = '';
 
             const isSupport = (activeChat.rideId === null || activeChat.rideId === undefined || activeChat.rideId === 'null');
             const rideIdVal = isSupport ? null : activeChat.rideId;
-
             const newMsg = {
                 ride_id: rideIdVal,
                 sender_id: String(currentUser.id || currentUser.name),
@@ -1884,7 +1731,6 @@
                 text: text,
                 created_at: new Date().toISOString()
             };
-
             appendChatMessage(newMsg);
             const convKey = `${activeChat.rideId}_${activeChat.recipientName}`;
             setConversationLastRead(convKey);
@@ -1893,7 +1739,6 @@
                 const { error } = await supabaseClient
                     .from('messages')
                     .insert([newMsg]);
-
                 if (error) {
                     console.error('Supabase send message error:', error);
                     showToast('Ошибка при отправке сообщения');
@@ -1907,7 +1752,6 @@
         async function fetchUserConversations(isSilent = false) {
             const container = document.getElementById('chats-list');
             if (!container) return;
-
             if (!isAuthenticated) {
                 container.innerHTML = `
                     <div class="text-center py-8 bg-white rounded-2xl border border-slate-100 space-y-3 p-4">
@@ -1922,7 +1766,6 @@
                 `;
                 return;
             }
-
             if (!isSilent) {
                 container.innerHTML = `
                     <div class="text-center py-8 text-slate-400 text-xs">
@@ -1930,7 +1773,6 @@
                     </div>
                 `;
             }
-
             try {
                 let myId = String(currentUser.id || currentUser.name);
                 const { data, error } = await supabaseClient
@@ -1954,15 +1796,20 @@
                     return;
                 }
 
+                // Check change fingerprint to prevent layout flickering on silent refresh
+                const currentHash = data.length + '_' + (data[0] ? data[0].id : 0);
+                if (isSilent && currentHash === lastConversationsHash) {
+                    return;
+                }
+                lastConversationsHash = currentHash;
+
                 const rideIds = [...new Set(data.map(m => m.ride_id).filter(id => id !== null && id !== undefined && id !== 'null'))];
                 const ridesMap = new Map();
-
                 if (rideIds.length > 0) {
                     const { data: ridesData } = await supabaseClient
                         .from('rides')
                         .select('id, driver_name, driver_avatar, route, user_id, date, time')
                         .in('id', rideIds);
-
                     if (ridesData) {
                         ridesData.forEach(r => ridesMap.set(r.id, r));
                     }
@@ -1977,50 +1824,37 @@
                     const ride = !isSupportMsg ? ridesMap.get(msg.ride_id) : null;
                     let isExpired = false;
 
-                    // Автоматическая очистка: скрывать поездки старше 5 дней, а поддержку хранить 30 дней
                     if (!isSupportMsg) {
                         if (ride && ride.date && ride.time) {
                             const rideDateTime = new Date(`${ride.date}T${ride.time}`);
                             const daysSinceFinish = (now - rideDateTime) / (1000 * 60 * 60 * 24);
-                            if (daysSinceFinish > 5) {
-                                return; // Прошло больше 5 дней — скрываем завершённую поездку
-                            }
-                            if (rideDateTime < now) {
-                                isExpired = true;
-                            }
+                            if (daysSinceFinish > 5) return;
+                            if (rideDateTime < now) isExpired = true;
                         } else if (!ride) {
                             const msgAgeDays = (now - new Date(msg.created_at)) / (1000 * 60 * 60 * 24);
-                            if (msgAgeDays > 5) {
-                                return; // Удалённая поездка старше 5 дней — скрываем
-                            }
+                            if (msgAgeDays > 5) return;
                             isExpired = true;
                         }
                     } else {
-                        // Сообщения поддержки хранятся 30 дней
                         const msgAgeDays = (now - new Date(msg.created_at)) / (1000 * 60 * 60 * 24);
-                        if (msgAgeDays > 30) {
-                            return; // Старше месяца — скрываем
-                        }
+                        if (msgAgeDays > 30) return;
                     }
 
                     const isMySender = (String(msg.sender_id) === String(currentUser.id) || msg.sender_name === currentUser.name);
                     const isDriver = ride ? (String(ride.user_id) === String(currentUser.id) || ride.driver_name === currentUser.name) : false;
-
                     let otherPartyName = isMySender ? msg.recipient_name : msg.sender_name;
-                    let defaultAvatar = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80";
-                    let otherPartyAvatar = defaultAvatar;
+                    let otherPartyAvatar = DEFAULT_AVATAR;
 
                     if (isSupportMsg) {
                         otherPartyName = 'Служба поддержки Туда-Сюда';
-                        otherPartyAvatar = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80';
+                        otherPartyAvatar = SUPPORT_AVATAR;
                     } else if (ride && !isDriver) {
                         otherPartyName = ride.driver_name || otherPartyName;
-                        otherPartyAvatar = ride.driver_avatar || defaultAvatar;
+                        otherPartyAvatar = sanitizeUrl(ride.driver_avatar);
                     }
 
                     const convKey = `${msg.ride_id}_${otherPartyName}`;
                     const lastReadTime = getConversationLastRead(convKey);
-
                     if (!isMySender) {
                         if (!lastReadTime || new Date(msg.created_at) > new Date(lastReadTime)) {
                             unreadMap[convKey] = (unreadMap[convKey] || 0) + 1;
@@ -2039,7 +1873,7 @@
                             rideId: msg.ride_id,
                             otherPartyName: otherPartyName,
                             otherPartyId: isMySender ? msg.recipient_id : msg.sender_id,
-                            otherPartyAvatar: otherPartyAvatar,
+                            otherPartyAvatar: sanitizeUrl(otherPartyAvatar),
                             routeText: routeText,
                             lastMessage: msg.text,
                             lastTime: msg.created_at,
@@ -2055,12 +1889,12 @@
                 container.innerHTML = userConversations.map((conv, idx) => {
                     const formattedTime = new Date(conv.lastTime).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
                     const unreadCount = unreadMap[conv.convKey] || 0;
-
+                    const safeAvatar = sanitizeUrl(conv.otherPartyAvatar);
                     return `
                         <div onclick="openExistingChatByIndex(${idx})" class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-3 hover:border-indigo-200 active:scale-[0.99] transition cursor-pointer relative">
                             <div class="flex items-center gap-3">
                                 <div class="relative">
-                                    <img src="${conv.otherPartyAvatar}" alt="${escapeHtml(conv.otherPartyName)}" class="w-10 h-10 rounded-full object-cover border border-slate-100 shadow-sm" onerror="this.src='https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80'">
+                                    <img src="${safeAvatar}" alt="${escapeHtml(conv.otherPartyName)}" class="w-10 h-10 rounded-full object-cover border border-slate-100 shadow-sm" onerror="this.src='${DEFAULT_AVATAR}'">
                                     ${unreadCount > 0 ? `<span class="absolute -top-1 -right-1 bg-rose-500 text-white text-[9px] font-bold rounded-full h-4 min-w-[16px] px-1 flex items-center justify-center border border-white shadow-sm animate-pulse">${unreadCount > 99 ? '99+' : unreadCount}</span>` : ''}
                                 </div>
                                 <div class="space-y-0.5 max-w-[180px]">
@@ -2079,7 +1913,6 @@
                         </div>
                     `;
                 }).join('');
-
             } catch (err) {
                 console.error(err);
             }
@@ -2088,14 +1921,12 @@
         function openExistingChatByIndex(index) {
             const conv = userConversations[index];
             if (!conv) return;
-
             setConversationLastRead(conv.convKey);
-
             activeChat = {
                 rideId: conv.rideId,
                 recipientId: conv.otherPartyId,
                 recipientName: conv.otherPartyName,
-                recipientAvatar: conv.otherPartyAvatar,
+                recipientAvatar: sanitizeUrl(conv.otherPartyAvatar),
                 routeText: conv.routeText,
                 isExpired: conv.isExpired
             };
@@ -2118,12 +1949,10 @@
 
         async function handlePublish(e) {
             e.preventDefault();
-
             if (!isAuthenticated) {
                 openLoginModal();
                 return;
             }
-
             const from = document.getElementById('pub-from').value.trim();
             const to = document.getElementById('pub-to').value.trim();
             const date = document.getElementById('pub-date').value;
@@ -2137,13 +1966,11 @@
                 showToast('Заполните обязательные поля');
                 return;
             }
-
             const rideDateTime = new Date(`${date}T${time}`);
             if (rideDateTime < new Date()) {
                 showToast('Выберите актуальную дату');
                 return;
             }
-
             const stopInputs = document.querySelectorAll('.stop-input');
             const priceInputs = document.querySelectorAll('.stop-price');
             
@@ -2155,7 +1982,6 @@
                     stops.push(cityPrice ? `${cityName}|${cityPrice}` : cityName);
                 }
             });
-
             const route = [from, ...stops, to];
             const finalPhone = phone || currentUser.phone;
 
@@ -2164,7 +1990,7 @@
                     .from('rides')
                     .insert([{
                         driver_name: currentUser.name,
-                        driver_avatar: currentUser.avatar,
+                        driver_avatar: sanitizeUrl(currentUser.avatar),
                         route: route,
                         date: date,
                         time: time,
@@ -2174,32 +2000,27 @@
                         comment: comment,
                         user_id: String(currentUser.id || currentUser.name)
                     }]);
-
                 if (error) {
                     console.error('Supabase insert error:', error);
                     showToast('Ошибка при публикации');
                     return;
                 }
-
                 if (finalPhone) {
                     currentUser.phone = finalPhone;
                     localStorage.setItem('ts_user_phone', finalPhone);
                     saveUserSession();
                 }
-
                 showToast('Поездка успешно опубликована!');
                 
                 document.getElementById('publish-form').reset();
                 document.getElementById('stops-container').innerHTML = '';
                 syncProfileUI();
-
                 document.getElementById('search-from').value = from;
                 document.getElementById('search-to').value = to;
                 document.getElementById('search-date').value = date;
                 
                 await switchTab('search');
                 filterRides();
-
             } catch (err) {
                 console.error(err);
                 showToast('Ошибка соединения');
@@ -2210,35 +2031,29 @@
             const from = document.getElementById('search-from').value.trim().toLowerCase();
             const to = document.getElementById('search-to').value.trim().toLowerCase();
             const selectedDate = document.getElementById('search-date').value;
-
             if (!from || !to || !selectedDate) {
                 showToast('Заполните все три поля: Откуда, Куда и Дату');
                 return;
             }
-
             if (selectedDate < today) {
                 showToast('Выберите актуальную дату');
                 return;
             }
-
             isFilterActive = true;
-
             try {
                 const { data, error } = await supabaseClient
                     .from('rides')
                     .select('*')
                     .eq('date', selectedDate)
                     .order('time', { ascending: true });
-
                 if (error) {
                     showToast('Ошибка поиска');
                     return;
                 }
-
                 const rawList = data ? data.map(r => ({
                     id: r.id,
                     driverName: r.driver_name,
-                    driverAvatar: r.driver_avatar || currentUser.avatar,
+                    driverAvatar: sanitizeUrl(r.driver_avatar || currentUser.avatar),
                     route: r.route || [],
                     date: r.date,
                     time: r.time,
@@ -2258,9 +2073,7 @@
 
                 document.getElementById('filter-info').classList.remove('hidden');
                 document.getElementById('filter-text').innerText = `Фильтр: ${from} ➔ ${to} | Дата: ${selectedDate}`;
-
                 renderRides(searchResultsRides);
-
             } catch (err) {
                 showToast('Ошибка сети при поиске');
             }
@@ -2281,14 +2094,13 @@
                 document.getElementById(`tab-${tab}`).classList.add('hidden');
                 document.getElementById(`nav-${tab}`).className = 'flex flex-col items-center gap-1 inactive-tab w-1/4 relative';
             });
-
             document.getElementById(`tab-${tabName}`).classList.remove('hidden');
             document.getElementById(`nav-${tabName}`).className = 'flex flex-col items-center gap-1 active-tab w-1/4 relative';
 
             if (tabName === 'my-rides') {
                 await fetchMyRidesFromSupabase();
             } else if (tabName === 'chats') {
-                await fetchUserConversations();
+                await fetchUserConversations(false);
             } else if (tabName === 'publish') {
                 document.getElementById('pub-phone').value = currentUser.phone || '';
             } else if (tabName === 'search') {
@@ -2300,6 +2112,7 @@
             }
         }
 
+        // Pull to refresh mechanism for my-rides
         let touchStartY = 0;
         const mainContainer = document.querySelector('main');
         const pullSpinner = document.getElementById('pull-spinner');
@@ -2317,7 +2130,6 @@
             if (!touchStartY || document.getElementById('tab-my-rides').classList.contains('hidden')) return;
             const currentY = e.touches[0].clientY;
             const diff = currentY - touchStartY;
-
             if (diff > 40 && mainContainer.scrollTop === 0) {
                 pullSpinner.style.height = '32px';
                 pullSpinner.style.opacity = '1';
@@ -2334,6 +2146,7 @@
             touchStartY = 0;
         });
 
+        // Deep linking parser with Auto-Filter support
         async function checkDeepLinkRide() {
             let targetRideId = null;
             const urlParams = new URLSearchParams(window.location.search);
@@ -2354,7 +2167,7 @@
 
             if (targetRideId && !isNaN(targetRideId)) {
                 try {
-                    const { data, error } = await supabaseClient
+                    const { data } = await supabaseClient
                         .from('rides')
                         .select('*')
                         .eq('id', targetRideId)
@@ -2364,7 +2177,7 @@
                         const rideObj = {
                             id: data.id,
                             driverName: data.driver_name,
-                            driverAvatar: data.driver_avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80',
+                            driverAvatar: sanitizeUrl(data.driver_avatar || DEFAULT_AVATAR),
                             route: data.route || [],
                             date: data.date,
                             time: data.time,
@@ -2374,29 +2187,24 @@
                             comment: data.comment,
                             userId: data.user_id
                         };
-
-                        if (!searchResultsRides.some(r => r.id === rideObj.id)) {
-                            searchResultsRides.push(rideObj);
-                        }
+                        
+                        // Seed search feed with the opened ride so the screen isn't blank
+                        searchResultsRides = [rideObj];
+                        isFilterActive = true;
+                        const firstStop = parseStop(rideObj.route[0]).name;
+                        const lastStop = parseStop(rideObj.route[rideObj.route.length - 1]).name;
+                        document.getElementById('search-from').value = firstStop;
+                        document.getElementById('search-to').value = lastStop;
+                        document.getElementById('search-date').value = rideObj.date;
+                        document.getElementById('filter-info').classList.remove('hidden');
+                        document.getElementById('filter-text').innerText = `Поездка #${rideObj.id}: ${firstStop} ➔ ${lastStop}`;
+                        renderRides(searchResultsRides);
                         openRideDetail(rideObj.id);
                     }
                 } catch (e) {
                     console.warn('Deep link ride load error:', e);
                 }
             }
-        }
-
-        async function autoCleanupExpiredMessages() {
-            if (!isAuthenticated) return;
-            try {
-                const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-                // Фоновая зачистка сообщений поддержки старше 30 дней
-                await supabaseClient
-                    .from('messages')
-                    .delete()
-                    .is('ride_id', null)
-                    .lt('created_at', thirtyDaysAgo);
-            } catch (e) {}
         }
 
         async function initApp() {
@@ -2406,8 +2214,7 @@
             if (isAuthenticated) {
                 initRealtimeMessages();
                 startMessagesPolling();
-                await fetchUserConversations(true);
-                autoCleanupExpiredMessages();
+                await fetchUserConversations(false);
             }
             renderRides();
             await checkDeepLinkRide();
