@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="referrer" content="no-referrer">
     <title>Туда-Сюда — Попутчики</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -119,7 +120,7 @@
             </div>
             
             <button id="btn-header-profile" onclick="handleHeaderProfileClick()" class="flex items-center gap-2 bg-white/15 hover:bg-white/25 active:scale-95 transition pl-2.5 pr-4 py-1.5 rounded-full">
-                <img id="header-avatar" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80" alt="Avatar" class="w-6 h-6 rounded-full object-cover border border-white/40">
+                <img id="header-avatar" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80" alt="Avatar" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80'" class="w-6 h-6 rounded-full object-cover border border-white/40">
                 <span id="header-name" class="text-xs font-medium max-w-[100px] truncate">Войти</span>
                 <i id="header-icon" class="fa-solid fa-right-to-bracket text-[10px] opacity-80"></i>
             </button>
@@ -259,7 +260,7 @@
                 </button>
                 <div class="flex items-center justify-between pr-8">
                     <div class="flex items-center gap-3">
-                        <img id="modal-driver-avatar" src="" alt="Avatar" class="w-11 h-11 rounded-full object-cover border border-slate-100 shadow-sm">
+                        <img id="modal-driver-avatar" src="" alt="Avatar" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80'" class="w-11 h-11 rounded-full object-cover border border-slate-100 shadow-sm">
                         <div>
                             <h3 id="modal-driver-name" class="font-bold text-slate-800 text-xs"></h3>
                             <span class="text-[10px] text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full font-medium">Водитель</span>
@@ -323,7 +324,7 @@
             <div class="chat-sheet relative" onclick="event.stopPropagation()">
                 <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                     <div class="flex items-center gap-2.5">
-                        <img id="chat-header-avatar" src="" alt="Avatar" class="w-9 h-9 rounded-full object-cover border border-slate-100">
+                        <img id="chat-header-avatar" src="" alt="Avatar" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80'" class="w-9 h-9 rounded-full object-cover border border-slate-100">
                         <div>
                             <h3 id="chat-header-name" class="font-bold text-slate-800 text-xs"></h3>
                             <p id="chat-header-route" class="text-[10px] text-slate-500 font-medium max-w-[180px] truncate"></p>
@@ -448,7 +449,7 @@
                     <i class="fa-solid fa-xmark text-sm"></i>
                 </button>
                 <div class="text-center space-y-2">
-                    <img id="cabinet-avatar" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80" alt="Avatar" class="w-16 h-16 rounded-full object-cover mx-auto border-2 border-indigo-500 shadow-sm">
+                    <img id="cabinet-avatar" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80" alt="Avatar" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80'" class="w-16 h-16 rounded-full object-cover mx-auto border-2 border-indigo-500 shadow-sm">
                     <div>
                         <h3 id="cabinet-name" class="font-bold text-slate-800 text-sm">Пользователь</h3>
                         <span id="cabinet-auth-tag" class="text-[10px] bg-emerald-50 text-emerald-600 font-semibold px-2 py-0.5 rounded-full border border-emerald-200">
@@ -571,12 +572,13 @@
         let lastConversationsHash = '';
         const today = new Date().toISOString().split('T')[0];
 
-        // Sanitize Avatar URLs against XSS / injection attacks
+        // Sanitize Avatar URLs safely without breaking query parameters (&quality, &ava)
         function sanitizeUrl(url) {
             if (!url) return DEFAULT_AVATAR;
             const clean = String(url).trim();
             if (clean.startsWith('https://') || clean.startsWith('http://')) {
-                return escapeHtml(clean);
+                // Remove dangerous characters (quotes, HTML tags, newlines) while preserving & and query params
+                return clean.replace(/["'<>\r\n]/g, '');
             }
             return DEFAULT_AVATAR;
         }
@@ -1104,7 +1106,7 @@
                     <div onclick="openRideDetail(${ride.id})" class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm space-y-2 hover:border-indigo-300 active:scale-[0.99] transition cursor-pointer">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-2.5">
-                                <img src="${safeAvatar}" alt="${escapeHtml(ride.driverName)}" class="w-9 h-9 rounded-full object-cover border border-slate-100">
+                                <img src="${safeAvatar}" alt="${escapeHtml(ride.driverName)}" onerror="this.onerror=null;this.src='${DEFAULT_AVATAR}'" class="w-9 h-9 rounded-full object-cover border border-slate-100">
                                 <div>
                                     <div class="flex items-center gap-1.5">
                                         <h4 class="text-xs font-bold text-slate-800">${escapeHtml(ride.driverName)}</h4>
@@ -1421,6 +1423,12 @@
                     showToast('Ошибка при удалении поездки');
                     return;
                 }
+                // Удаляем оставшиеся сообщения удаленной поездки
+                await supabaseClient
+                    .from('messages')
+                    .delete()
+                    .eq('ride_id', rideId);
+
                 await fetchMyRidesFromSupabase();
                 showToast('Поездка отменена и удалена.');
                 if (isFilterActive) {
@@ -1671,9 +1679,10 @@
                 let otherName = activeChat.recipientName || '';
 
                 if (activeChat.rideId === null || activeChat.rideId === undefined || activeChat.rideId === 'null') {
-                    query = query.is('ride_id', null).or(`sender_id.eq.${myId},recipient_id.eq.${myId},sender_name.eq.${myName},recipient_name.eq.${myName}`);
+                    query = query.is('ride_id', null).or(`sender_id.eq.${myId},recipient_id.eq.${myId}`);
                 } else {
-                    query = query.eq('ride_id', activeChat.rideId).or(`sender_id.eq.${myId},recipient_id.eq.${myId},sender_name.eq.${myName},recipient_name.eq.${myName}`);
+                    // Для конкретной поездки фильтруем по ID поездки (использует созданный индекс)
+                    query = query.eq('ride_id', activeChat.rideId);
                 }
                 const { data, error } = await query.order('created_at', { ascending: true });
                 if (error || !data || data.length === 0) {
@@ -2048,6 +2057,7 @@
                 showToast('Поездка успешно опубликована!');
                 
                 document.getElementById('publish-form').reset();
+                document.getElementById('pub-date').value = today;
                 document.getElementById('stops-container').innerHTML = '';
                 syncProfileUI();
                 document.getElementById('search-from').value = from;
@@ -2243,6 +2253,18 @@
         }
 
         async function initApp() {
+            // Устанавливаем дату по умолчанию и блокируем выбор дат из прошлого
+            const dateInputSearch = document.getElementById('search-date');
+            const dateInputPub = document.getElementById('pub-date');
+            if (dateInputSearch) {
+                dateInputSearch.value = today;
+                dateInputSearch.min = today;
+            }
+            if (dateInputPub) {
+                dateInputPub.value = today;
+                dateInputPub.min = today;
+            }
+
             syncProfileUI();
             await initTgUserData();
             await initVkUserData();
