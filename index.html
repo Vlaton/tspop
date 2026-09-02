@@ -1626,9 +1626,14 @@
 
             // 1. VK Mini Apps sharing
             if (typeof vkBridge !== 'undefined' && isInsideVk) {
+                // Копируем готовый текст в буфер обмена через VK Bridge
+                vkBridge.send('VKWebAppCopyText', { text: fullMessage }).catch(() => {});
+                
+                // Открываем нативное окно шеринга интерактивного виджета приложения
                 vkBridge.send('VKWebAppShare', {
-                    link: shareUrl,
-                    message: shareText
+                    link: shareUrl
+                }).then(() => {
+                    showToast('Виджет отправлен!');
                 }).catch(() => {
                     fallbackShare(shareText, shareUrl);
                 });
