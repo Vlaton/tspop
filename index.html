@@ -728,7 +728,14 @@
                     if (isForMe) {
                         const isChatModalOpen = document.getElementById('chat-modal').classList.contains('open');
                         const isSupport = (newMsg.ride_id === null || newMsg.ride_id === undefined || newMsg.ride_id === 'null');
-                        if (isChatModalOpen && activeChat && String(activeChat.rideId) === String(newMsg.ride_id)) {
+                        
+                        // Strict check: append ONLY if new message is from the currently active chat participant
+                        const isActiveDialog = activeChat && (
+                            String(activeChat.rideId) === String(newMsg.ride_id) &&
+                            (senderId === String(activeChat.recipientId) || senderName === activeChat.recipientName)
+                        );
+
+                        if (isChatModalOpen && isActiveDialog) {
                             appendChatMessage(newMsg);
                             setConversationLastRead(`${newMsg.ride_id}_${senderName}`);
                             triggerVkHaptic();
@@ -1659,10 +1666,14 @@
             try {
                 let query = supabaseClient.from('messages').select('*');
                 let myId = String(currentUser.id || currentUser.name);
+                let myName = currentUser.name;
+                let otherId = String(activeChat.recipientId || '');
+                let otherName = activeChat.recipientName || '';
+
                 if (activeChat.rideId === null || activeChat.rideId === undefined || activeChat.rideId === 'null') {
-                    query = query.is('ride_id', null).or(`sender_id.eq.${myId},recipient_id.eq.${myId},sender_name.eq.${currentUser.name},recipient_name.eq.${currentUser.name}`);
+                    query = query.is('ride_id', null).or(`sender_id.eq.${myId},recipient_id.eq.${myId},sender_name.eq.${myName},recipient_name.eq.${myName}`);
                 } else {
-                    query = query.eq('ride_id', activeChat.rideId);
+                    query = query.eq('ride_id', activeChat.rideId).or(`sender_id.eq.${myId},recipient_id.eq.${myId},sender_name.eq.${myName},recipient_name.eq.${myName}`);
                 }
                 const { data, error } = await query.order('created_at', { ascending: true });
                 if (error || !data || data.length === 0) {
@@ -1675,11 +1686,35 @@
                     }
                     return;
                 }
-                const currentCount = container.querySelectorAll('.bg-indigo-600, .bg-slate-100').length;
-                if (isSilent && data.length === currentCount) {
+
+                // Strict 1-on-1 dialogue isolation: show ONLY messages between current user and the specific dialog participant
+                const filteredData = data.filter(msg => {
+                    const sId = String(msg.sender_id || '');
+                    const sName = msg.sender_name || '';
+                    const rId = String(msg.recipient_id || '');
+                    const rName = msg.recipient_name || '';
+
+                    const isOut = (sId === myId || sName === myName) && (rId === otherId || rName === otherName);
+                    const isIn = (sId === otherId || sName === otherName) && (rId === myId || rName === myName);
+                    return isOut || isIn;
+                });
+
+                if (filteredData.length === 0) {
+                    if (!isSilent) {
+                        container.innerHTML = `
+                            <div class="text-center py-8 text-slate-400 text-xs px-4">
+                                Сообщений пока нет. Напишите водителю, чтобы договориться о деталях поездки!
+                            </div>
+                        `;
+                    }
                     return;
                 }
-                container.innerHTML = data.map(msg => {
+
+                const currentCount = container.querySelectorAll('.bg-indigo-600, .bg-slate-100').length;
+                if (isSilent && filteredData.length === currentCount) {
+                    return;
+                }
+                container.innerHTML = filteredData.map(msg => {
                     const isMyMsg = (String(msg.sender_id) === String(currentUser.id) || msg.sender_name === currentUser.name);
                     const msgTime = new Date(msg.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                     if (isMyMsg) {
